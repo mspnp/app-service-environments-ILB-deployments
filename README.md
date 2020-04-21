@@ -1,5 +1,5 @@
 # Introduction 
-App Services Environment has two configurations, [external]( /azure/app-service/environment/create-external-ase) and [internal]( /azure/app-service/environment/create-ilb-ase).  In this reference implementation we focus on Internal ASE. We focus on providing an end to end implementation of an enterprise ASE use case where we leverage best practices across Networking, App Gateway, Firewall, Security (managed Service identity) and High Availability.   
+App Services Environment has two configurations, [external]( /azure/app-service/environment/create-external-ase) and [internal]( /azure/app-service/environment/create-ilb-ase).  In this reference implementation we focus on Internal ASE. We focus on providing an end to end implementation of an enterprise ASE use case where we leverage best practices across Networking, App Gateway, Firewall, Security (managed service identity) and High Availability.   
 
 # Getting Started
 Start with the Deployment folder and follow the Readme file there.  The assumption is that you would have cloned this repo to a local environment where you are able to execute shell scripts.
