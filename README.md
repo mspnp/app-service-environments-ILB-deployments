@@ -1,20 +1,14 @@
 # Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+App Services Environment has two configurations, [external]( /azure/app-service/environment/create-external-ase) and [internal]( /azure/app-service/environment/create-ilb-ase).  In this reference implementation we focus on Internal ASE. We focus on providing an end to end implementation of an enterprise ASE use case where we leverage best practices across Networking, App Gateway, Firewall, Security (managed Service identity) and High Availability.   
 
 # Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+Start with the Deployment folder and follow the Readme file there.  The assumption is that you would have cloned this repo to a local environment where you are able to execute shell scripts.
+In the Code folder, there are two sample applications, one a Web Application with an associated API layer.  A second is a function application that executed when messages arrive in the service bus.    
+
 
 # Build and Test
-TODO: Describe and show how to build your code and run the tests. 
+The infrastructure is deployed using the Getting started steps.  The Application layer can be setup to run through a deployment pipeline provided.    
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
+---
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
