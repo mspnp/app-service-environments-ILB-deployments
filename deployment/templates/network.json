@@ -1,0 +1,80 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "defaultValue": "[resourceGroup().location]",
+      "type": "string",
+      "metadata": {
+        "description": "The location in which the resources should be deployed."
+      }
+    },    
+    "vnetAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "The IP address prefix the network will use."
+      }
+    },
+    "existentVnetName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "The name of the vnet to use. Leave empty to create a new vnet."
+      }
+    }
+  },
+  "variables": {
+    "mustCreateVNet": "[empty(parameters('existentVnetName'))]",
+    "vnetName": "[if(empty(parameters('existentVnetName')),concat('ASE-VNET', uniqueString(resourceGroup().id)),parameters('existentVnetName'))]",
+    "vnetRouteName": "[concat('ASE-VNETRT', uniqueString(resourceGroup().id))]"
+  },
+  "resources": [
+    {
+      "condition": "[variables('mustCreateVNet')]",
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2019-11-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "displayName": "ASE-VNET"
+      },
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('vnetAddressPrefix')]"
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/routeTables",
+      "apiVersion": "2019-11-01",
+      "name": "[variables('vnetRouteName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "displayName": "UDR - Subnet"
+      },
+      "properties": {
+        "routes": [
+          {
+            "name": "[concat(variables('vnetRouteName'), '-route')]",
+            "properties": {
+              "addressPrefix": "0.0.0.0/0",
+              "nextHopType": "Internet"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "vnetName": {
+      "value": "[variables('vnetName')]",
+      "type": "string"
+    },
+    "vnetRouteName": {
+      "value": "[variables('vnetRouteName')]",
+      "type": "string"
+    }
+  }
+}

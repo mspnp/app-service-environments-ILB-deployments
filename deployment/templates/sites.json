@@ -1,0 +1,609 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "defaultValue": "[resourceGroup().location]",
+      "type": "string",
+      "metadata": {
+        "description": "The location in which the resources should be deployed."
+      }
+    },
+    "vnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "The vnet name where redis will be connected."
+      }
+    },
+    "redisSubnetAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "The ip address prefix REDIS will use."
+      }
+    },
+    "aseName": {
+      "type": "string",
+      "metadata": {
+        "description": "The ASE name where to host the applications"
+      }
+    },
+    "aseDnsSuffix": {
+      "type": "string",
+      "metadata": {
+        "description": "DNS suffix where the app will be deployed"
+      }
+    },
+    "keyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the key vault name"
+      }
+    },
+    "serviceBusName": {
+      "type": "string",
+      "metadata": {
+        "description": "Theservice bus name"
+      }
+    },
+    "cosmosDbName": {
+      "type": "string",
+      "metadata": {
+        "description": "The cosmos DB name"
+      }
+    },
+    "sqlServerName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name for the sql server"
+      }
+    },
+    "sqlDatabaseName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name for the sql database"
+      }
+    },
+    "zone": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "The availability zone to deploy. Valid values are: 1, 2 or 3. Use empty to not use zones."
+      }
+    }
+  },
+  "variables": {
+    "instanceIndex": "[if(empty(parameters('zone')),'0',parameters('zone'))]",
+    "redisName": "[concat('REDIS-', uniqueString(resourceGroup().id), '-', variables('instanceIndex'))]",
+    "redisSubnetName": "[concat('redis-subnet-', uniqueString(resourceGroup().id), '-', variables('instanceIndex'))]",
+    "redisSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), variables('redisSubnetName'))]",
+    "redisNSGName": "[concat(parameters('vnetName'), '-REDIS-', variables('instanceIndex'), '-NSG')]",
+    "redisSecretName": "[concat('RedisConnectionString', variables('instanceIndex'))]",
+    "cosmosKeySecretName": "CosmosKey",
+    "votingApiName": "[concat('votingapiapp', '-', variables('instanceIndex'), '-', uniqueString(resourceGroup().id))]",
+    "votingWebName": "[concat('votingwebapp', '-', variables('instanceIndex'), '-', uniqueString(resourceGroup().id))]",
+    "testWebName": "[concat('testwebapp', '-', variables('instanceIndex'), '-', uniqueString(resourceGroup().id))]",
+    "votingFunctionName": "[concat('votingfuncapp', '-', variables('instanceIndex'), '-', uniqueString(resourceGroup().id))]",
+    "votingApiPlanName": "[concat(variables('votingApiName'), '-plan')]",
+    "votingWebPlanName": "[concat(variables('votingWebName'), '-plan')]",
+    "testWebPlanName": "[concat(variables('testWebName'), '-plan')]",
+    "votingFunctionPlanName": "[concat(variables('votingFunctionName'), '-plan')]",
+    "aseId": "[resourceId('Microsoft.Web/hostingEnvironments', parameters('aseName'))]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2017-06-01",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[variables('redisNSGName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "displayName": "[variables('redisNSGName')]"
+      },
+      "properties": {
+        "securityRules": [
+          {
+            "name": "REDIS-inbound-vnet",
+            "properties": {
+              "description": "Client communication inside vnet",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRanges": [
+                "6379",
+                "6380",
+                "13000-13999",
+                "15000-15999"
+              ],
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[parameters('redisSubnetAddressPrefix')]",
+              "access": "Allow",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "REDIS-inbound-loadbalancer",
+            "properties": {
+              "description": "Allow communication from Load Balancer",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "destinationAddressPrefix": "[parameters('redisSubnetAddressPrefix')]",
+              "access": "Allow",
+              "priority": 201,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "REDIS-inbound-allow_internal-communication",
+            "properties": {
+              "description": "Internal communications for Redis",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRanges": [
+                "6379",
+                "6380",
+                "8443",
+                "10221-10231",
+                "20226"
+              ],
+              "sourceAddressPrefix": "[parameters('redisSubnetAddressPrefix')]",
+              "destinationAddressPrefix": "[parameters('redisSubnetAddressPrefix')]",
+              "access": "Allow",
+              "priority": 202,
+              "direction": "Inbound"
+            }
+          },
+
+          {
+            "name": "REDIS-outbound-allow_storage",
+            "properties": {
+              "description": "Redis dependencies on Azure Storage/PKI (Internet)",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRanges": [
+                "80",
+                "443"
+              ],
+              "sourceAddressPrefix": "[parameters('redisSubnetAddressPrefix')]",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 200,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "REDIS-outbound-allow_DNS",
+            "properties": {
+              "description": "Redis dependencies on DNS (Internet/VNet)",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "53",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 201,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "REDIS-outbound-allow_ports-within-subnet",
+            "properties": {
+              "description": "Internal communications for Redis",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[parameters('redisSubnetAddressPrefix')]",
+              "destinationAddressPrefix": "[parameters('redisSubnetAddressPrefix')]",
+              "access": "Allow",
+              "priority": 202,
+              "direction": "Outbound"
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "apiVersion": "2018-04-01",
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "name": "[concat(parameters('vnetName'), '/', variables('redisSubnetName'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('redisNSGName'))]"
+      ],
+      "properties": {
+        "addressPrefix": "[parameters('redisSubnetAddressPrefix')]",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('redisNSGName'))]"
+        }
+      }
+    },
+
+    { 
+      "type": "Microsoft.Cache/Redis",
+      "apiVersion": "2019-07-01",
+      "name": "[variables('redisName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[variables('redisSubnetId')]"
+      ],
+      "zones": "[if(empty(parameters('zone')),json('null'),array(parameters('zone')))]",
+      "properties": {
+        "sku": {
+          "name": "Premium",
+          "family": "P",
+          "capacity": 3
+        },
+        "enableNonSslPort": false,
+        "redisConfiguration": {
+          "maxclients": "5000"
+        },
+        "subnetId": "[variables('redisSubnetId')]"
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "name": "[concat(parameters('keyVaultName'), '/', variables('redisSecretName'))]",
+      "apiVersion": "2015-06-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Cache/Redis', variables('redisName'))]"
+      ],
+      "properties": {
+        "value": "[concat(variables('redisName'),'.redis.cache.windows.net:6380,abortConnect=false,ssl=true,password=', listKeys(resourceId('Microsoft.Cache/Redis', variables('redisName')), '2015-08-01').primaryKey)]"
+      }
+    },
+
+
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2015-05-01",
+      "name": "[variables('votingFunctionName')]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "Flow_Type": "Redfield",
+        "Request_Source": "AppServiceEnablementCreate"
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2015-05-01",
+      "name": "[variables('votingApiName')]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "Flow_Type": "Redfield",
+        "HockeyAppId": ""
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2015-05-01",
+      "name": "[variables('votingWebName')]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "Flow_Type": "Redfield",
+        "HockeyAppId": ""
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2015-05-01",
+      "name": "[variables('testWebName')]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "Flow_Type": "Redfield",
+        "HockeyAppId": ""
+      }
+    },
+
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2016-09-01",
+      "name": "[variables('votingFunctionPlanName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "I1",
+        "tier": "Isolated"
+      },
+      "kind": "functionapp",
+      "properties": {
+        "name": "[variables('votingFunctionPlanName')]",
+        "perSiteScaling": false,
+        "reserved": false,
+        "targetWorkerCount": 0,
+        "targetWorkerSizeId": 0,
+        "hostingEnvironment": "[parameters('aseName')]"
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2016-09-01",
+      "name": "[variables('votingApiPlanName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "I1",
+        "tier": "Isolated"
+      },
+      "kind": "app",
+      "properties": {
+        "name": "[variables('votingApiPlanName')]",
+        "perSiteScaling": false,
+        "reserved": false,
+        "targetWorkerCount": 0,
+        "targetWorkerSizeId": 0,
+        "hostingEnvironment": "[parameters('aseName')]"
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2016-09-01",
+      "name": "[variables('votingWebPlanName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "I1",
+        "tier": "Isolated"
+      },
+      "kind": "app",
+      "properties": {
+        "name": "[variables('votingWebPlanName')]",
+        "perSiteScaling": false,
+        "reserved": false,
+        "targetWorkerCount": 0,
+        "targetWorkerSizeId": 0,
+        "hostingEnvironment": "[parameters('aseName')]"
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2016-09-01",
+      "name": "[variables('testWebPlanName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "I1",
+        "tier": "Isolated"
+      },
+      "kind": "app",
+      "properties": {
+        "name": "[variables('testWebPlanName')]",
+        "perSiteScaling": false,
+        "reserved": false,
+        "targetWorkerCount": 0,
+        "targetWorkerSizeId": 0,
+        "hostingEnvironment": "[parameters('aseName')]"
+      }
+    },
+
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2018-11-01",
+      "name": "[variables('votingFunctionName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('votingFunctionPlanName'))]",
+        "[resourceId('Microsoft.Insights/components', variables('votingFunctionName'))]"
+      ],
+      "kind": "functionapp",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "enabled": true,
+        "name": "[variables('votingFunctionName')]",
+        "hostingEnvironment": "[variables('aseId')]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('votingFunctionPlanName'))]",
+        "siteConfig": {
+          "alwaysOn": true,
+          "appSettings": [
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "~3"
+            },
+            {
+              "name": "FUNCTIONS_WORKER_RUNTIME",
+              "value": "dotnet"
+            },
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('votingFunctionName')), '2014-04-01').InstrumentationKey]"
+            },
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[concat('InstrumentationKey=', reference(resourceId('Microsoft.Insights/components', variables('votingFunctionName')), '2014-04-01').InstrumentationKey)]"
+            },
+            {
+              "name": "SERVICEBUS_CONNECTION_STRING",
+              "value": "[concat('Endpoint=sb://', parameters('serviceBusName'), '.servicebus.windows.net;Authentication=ManagedIdentity')]"
+            },
+            {
+              "name": "sqldb_connection",
+              "value": "[concat('Server=', reference(resourceId('Microsoft.Sql/servers', parameters('sqlServerName')), '2015-05-01-preview').fullyQualifiedDomainName, ',1433;Database=', parameters('sqlDatabaseName'), ';')]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2018-11-01",
+      "name": "[variables('votingApiName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('votingApiPlanName'))]",
+        "[resourceId('Microsoft.Insights/components', variables('votingApiName'))]"
+      ],
+      "kind": "app",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "enabled": true,
+        "name": "[variables('votingApiName')]",
+        "hostingEnvironment": "[variables('aseId')]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('votingApiPlanName'))]",
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('votingApiName')), '2014-04-01').InstrumentationKey]"
+            },
+            {
+              "name": "ApplicationInsights:InstrumentationKey",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('votingApiName')), '2014-04-01').InstrumentationKey]"
+            },
+            {
+              "name": "ConnectionStrings:SqlDbConnection",
+              "value": "[concat('Server=', reference(resourceId('Microsoft.Sql/servers', parameters('sqlServerName')), '2015-05-01-preview').fullyQualifiedDomainName, ',1433;Database=', parameters('sqlDatabaseName'), ';')]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2018-11-01",
+      "name": "[variables('votingWebName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('votingWebPlanName'))]",
+        "[resourceId('Microsoft.Insights/components', variables('votingWebName'))]",
+        "[resourceId('Microsoft.Web/sites', variables('votingApiName'))]"
+      ],
+      "kind": "app",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "enabled": true,
+        "name": "[variables('votingWebName')]",
+        "hostingEnvironment": "[variables('aseId')]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('votingWebPlanName'))]",
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('votingWebName')), '2014-04-01').InstrumentationKey]"
+            },
+            {
+              "name": "ConnectionStrings:sbConnectionString",
+              "value": "[listKeys(resourceId(concat('Microsoft.ServiceBus/namespaces/AuthorizationRules'),parameters('serviceBusName'),'RootManageSharedAccessKey'),'2015-08-01').primaryConnectionString]"
+            },
+            {
+              "name": "ConnectionStrings:VotingDataAPIBaseUri",
+              "value": "[concat('https://', reference(resourceId('Microsoft.Web/sites', variables('votingApiName'))).hostNames[0])]"
+            },
+            {
+              "name": "ApplicationInsights:InstrumentationKey",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('votingWebName')), '2014-04-01').InstrumentationKey]"
+            },
+            {
+              "name": "ConnectionStrings:RedisConnectionString",
+              "value": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', parameters('keyVaultName'), variables('redisSecretName')), '2016-10-01').secretUriWithVersion, ')')]"
+            },
+            {
+              "name": "ConnectionStrings:queueName",
+              "value": "votingqueue"
+            },
+            {
+              "name": "ConnectionStrings:CosmosUri",
+              "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosDbName')),'2019-12-12').documentEndpoint]"
+            },
+            {
+              "name": "ConnectionStrings:CosmosKey",
+              "value": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', parameters('keyVaultName'), variables('cosmosKeySecretName')), '2016-10-01').secretUriWithVersion, ')')]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2018-11-01",
+      "name": "[variables('testWebName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('testWebPlanName'))]",
+        "[resourceId('Microsoft.Insights/components', variables('testWebName'))]"
+      ],
+      "kind": "app",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "enabled": true,
+        "name": "[variables('testWebName')]",
+        "hostingEnvironment": "[variables('aseId')]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('testWebPlanName'))]",
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('testWebName')), '2014-04-01').InstrumentationKey]"
+            },
+            {
+              "name": "ApplicationInsights:InstrumentationKey",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('testWebName')), '2014-04-01').InstrumentationKey]"
+            }
+          ]
+        }
+      }
+    }
+
+  ],
+  "outputs": {
+    "redisName": {
+      "value": "[variables('redisName')]",
+      "type": "string"
+    },
+    "redisSubnetId": {
+      "value": "[variables('redisSubnetId')]",
+      "type": "string"
+    },
+    "redisSubnetName": {
+      "value": "[variables('redisSubnetName')]",
+      "type": "string"
+    },
+    "votingWebName": {
+      "value": "[variables('votingWebName')]",
+      "type": "string"
+    },
+    "testWebName": {
+      "value": "[variables('testWebName')]",
+      "type": "string"
+    },
+    "votingAppUrl": {
+      "value": "[concat(variables('votingWebName'), '.', parameters('aseDnsSuffix'))]",
+      "type": "string"
+    },
+    "testAppUrl": {
+      "value": "[concat(variables('testWebName'), '.', parameters('aseDnsSuffix'))]",
+      "type": "string"
+    },
+    "votingApiName": {
+      "value": "[variables('votingApiName')]",
+      "type": "string"
+    },
+    "votingFunctionName": {
+      "value": "[variables('votingFunctionName')]",
+      "type": "string"
+    },
+    "votingWebAppIdentityPrincipalId": {
+      "value": "[reference(concat('Microsoft.Web/sites/', variables('votingWebName')), '2018-11-01', 'Full').identity.principalId]",
+      "type": "string"
+    },
+    "votingApiIdentityPrincipalId": {
+      "value": "[reference(concat('Microsoft.Web/sites/', variables('votingApiName')), '2018-11-01', 'Full').identity.principalId]",
+      "type": "string"
+    },
+    "votingCounterFunctionIdentityPrincipalId": {
+      "value": "[reference(concat('Microsoft.Web/sites/', variables('votingFunctionName')), '2018-11-01', 'Full').identity.principalId]",
+      "type": "string"
+    }
+  }
+}

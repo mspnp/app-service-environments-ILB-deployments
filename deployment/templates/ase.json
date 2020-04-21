@@ -1,0 +1,334 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "defaultValue": "[resourceGroup().location]",
+      "type": "string",
+      "metadata": {
+        "description": "The location in which the resources should be deployed."
+      }
+    },
+    "vnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "The vnet name where the ASE will be connected."
+      }
+    },
+    "vnetRouteName": {
+      "type": "string",
+      "metadata": {
+        "description": "The vnet route name for ASE subnet."
+      }
+    },
+    "aseSubnetAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "The ip address prefix that ASE will use."
+      }
+    },
+    "zone": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "The availability zone to deploy. Valid values are: 1, 2 or 3. Use empty to not use zones."
+      }
+    }
+  },
+  "variables": {
+    "instanceIndex": "[if(empty(parameters('zone')),'0',parameters('zone'))]",
+    "aseName": "[concat('ASE-', uniqueString(resourceGroup().id), '-', variables('instanceIndex'))]",
+    "aseNSGName": "[concat(parameters('vnetName'),'-ASE-', variables('instanceIndex'), '-NSG')]",
+    "aseId": "[resourceId('Microsoft.Web/hostingEnvironments', variables('aseName'))]",
+    "aseSubnetName": "[concat('ase-subnet-', variables('aseName'))]",
+    "aseSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), variables('aseSubnetName'))]",
+    "aseLoadBalancingMode": 3
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2019-11-01",
+      "name": "[variables('aseNSGName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "displayName": "[variables('aseNSGName')]"
+      },
+      "properties": {
+        "securityRules": [
+          {
+            "name": "ASE-internal-inbound",
+            "properties": {
+              "description": "ASE-internal-inbound",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[parameters('aseSubnetAddressPrefix')]",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "ASE-Inbound-management",
+            "properties": {
+              "description": "Used to manage ASE from public VIP",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "454-455",
+              "sourceAddressPrefix": "AppServiceManagement",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 210,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "ASE-Inbound-load-balancer-keep-alive",
+            "properties": {
+              "description": "Allow communication to ASE from Load Balancer",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "16001",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 211,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "ASE-Inbound-HTTP_HTTPS",
+            "properties": {
+              "description": "Allow HTTP/HTTPS",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRanges": [
+                "80",
+                "443"
+              ],
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 212,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "ASE-Inbound-FTP_FTPS",
+            "properties": {
+              "description": "Allow FTP and FTPS",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRanges": [
+                "21",
+                "990",
+                "10001-10020"
+              ],
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 213,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "ASE-Inbound-Remote-Debugging",
+            "properties": {
+              "description": "Visual Studio remote debugging",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "4016-4022",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 214,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "ASE-Inbound-Web-Deploy-Service",
+            "properties": {
+              "description": "Web deploy service",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "8172",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 215,
+              "direction": "Inbound"
+            }
+          },
+
+          {
+            "name": "ASE-internal-outbound",
+            "properties": {
+              "description": "ASE-internal-outbound",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[parameters('aseSubnetAddressPrefix')]",
+              "access": "Allow",
+              "priority": 200,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "ASE-Outbound-HTTP_HTTPS",
+            "properties": {
+              "description": "Allow HTTP and HTTPS traffic (needed to access storage)",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRanges": [
+                "80",
+                "443"
+              ],
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 210,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "ASE-Outbound-DB",
+            "properties": {
+              "description": "Allow access to database",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "1433",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "Sql",
+              "access": "Allow",
+              "priority": 211,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "ASE-Outbound-DNS",
+            "properties": {
+              "description": "Allow access to DNS",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "53",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 212,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "ASE-Outbound-NTP",
+            "properties": {
+              "description": "Allow access to clock synchronization",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "123",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 213,
+              "direction": "Outbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2019-11-01",
+      "name": "[concat(parameters('vnetName'), '/', variables('aseSubnetName'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('aseNSGName'))]"
+      ],
+      "properties": {
+        "addressPrefix": "[parameters('aseSubnetAddressPrefix')]",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('aseNSGName'))]"
+        },
+        "routeTable": {
+          "id": "[resourceId('Microsoft.Network/routeTables', parameters('vnetRouteName'))]"
+        },
+        "serviceEndpoints": [
+          {
+            "service": "Microsoft.AzureCosmosDB",
+            "locations": [
+              "[resourceGroup().location]"
+            ]
+          },
+          {
+            "service": "Microsoft.KeyVault",
+            "locations": [
+              "[resourceGroup().location]"
+            ]
+          },
+          {
+            "service": "Microsoft.ServiceBus",
+            "locations": [
+              "[resourceGroup().location]"
+            ]
+          },
+          {
+            "service": "Microsoft.Sql",
+            "locations": [
+              "[resourceGroup().location]"
+            ]
+          },
+          {
+            "service": "Microsoft.Storage",
+            "locations": [
+              "[resourceGroup().location]"
+            ]
+          },
+          {
+            "service": "Microsoft.EventHub",
+            "locations": [
+              "[resourceGroup().location]"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Web/hostingEnvironments",
+      "apiVersion": "2019-08-01",
+      "name": "[variables('aseName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[variables('aseSubnetId')]"
+      ],
+      "kind": "ASEV2",
+      "zones": "[if(empty(parameters('zone')),json('null'),array(parameters('zone')))]",
+      "properties": {
+        "name": "[variables('aseName')]",
+        "location": "[parameters('location')]",
+        "internalLoadBalancingMode": "[variables('aseLoadBalancingMode')]",
+        "virtualNetwork": {
+          "Id": "[variables('aseSubnetId')]"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "dnsSuffix": {
+      "value": "[reference(variables('aseId')).dnsSuffix]",
+      "type": "string"
+    },
+    "aseId": {
+      "value": "[variables('aseId')]",
+      "type": "string"
+    },
+    "aseSubnetName": {
+      "value": "[variables('aseSubnetName')]",
+      "type": "string"
+    },
+    "aseName": {
+      "value": "[variables('aseName')]",
+      "type": "string"
+    }
+  }
+}
