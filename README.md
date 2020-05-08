@@ -6,7 +6,7 @@ Start with the Deployment folder and follow the Readme file there.  The assumpti
 In the Code folder, there are two sample applications, one a Web Application with an associated API layer.  A second is a function application that executed when messages arrive in the service bus.    
 
 
-# Build and Test
+# Build and Run Test
 The infrastructure is deployed using the Getting started steps.  The Application layer can be setup to run through a deployment pipeline provided.    
 
 ---
