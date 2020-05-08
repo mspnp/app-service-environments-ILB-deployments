@@ -39,12 +39,6 @@
         "description": "The name of the key vault name"
       }
     },
-    "serviceBusName": {
-      "type": "string",
-      "metadata": {
-        "description": "Theservice bus name"
-      }
-    },
     "cosmosDbName": {
       "type": "string",
       "metadata": {
@@ -79,6 +73,8 @@
     "redisNSGName": "[concat(parameters('vnetName'), '-REDIS-', variables('instanceIndex'), '-NSG')]",
     "redisSecretName": "[concat('RedisConnectionString', variables('instanceIndex'))]",
     "cosmosKeySecretName": "CosmosKey",
+    "serviceBusListenerConnectionStringSecretName": "ServiceBusListenerConnectionString",
+    "serviceBusSenderConnectionStringSecretName": "ServiceBusSenderConnectionString",
     "votingApiName": "[concat('votingapiapp', '-', variables('instanceIndex'), '-', uniqueString(resourceGroup().id))]",
     "votingWebName": "[concat('votingwebapp', '-', variables('instanceIndex'), '-', uniqueString(resourceGroup().id))]",
     "testWebName": "[concat('testwebapp', '-', variables('instanceIndex'), '-', uniqueString(resourceGroup().id))]",
@@ -202,7 +198,6 @@
         ]
       }
     },
-
     {
       "apiVersion": "2018-04-01",
       "type": "Microsoft.Network/virtualNetworks/subnets",
@@ -218,8 +213,7 @@
         }
       }
     },
-
-    { 
+    {
       "type": "Microsoft.Cache/Redis",
       "apiVersion": "2019-07-01",
       "name": "[variables('redisName')]",
@@ -252,8 +246,6 @@
         "value": "[concat(variables('redisName'),'.redis.cache.windows.net:6380,abortConnect=false,ssl=true,password=', listKeys(resourceId('Microsoft.Cache/Redis', variables('redisName')), '2015-08-01').primaryKey)]"
       }
     },
-
-
     {
       "type": "Microsoft.Insights/components",
       "apiVersion": "2015-05-01",
@@ -302,7 +294,6 @@
         "HockeyAppId": ""
       }
     },
-
     {
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2016-09-01",
@@ -379,7 +370,6 @@
         "hostingEnvironment": "[parameters('aseName')]"
       }
     },
-
     {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2018-11-01",
@@ -419,7 +409,7 @@
             },
             {
               "name": "SERVICEBUS_CONNECTION_STRING",
-              "value": "[concat('Endpoint=sb://', parameters('serviceBusName'), '.servicebus.windows.net;Authentication=ManagedIdentity')]"
+              "value": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', parameters('keyVaultName'), variables('serviceBusListenerConnectionStringSecretName')), '2016-10-01').secretUriWithVersion, ')')]"
             },
             {
               "name": "sqldb_connection",
@@ -492,7 +482,7 @@
             },
             {
               "name": "ConnectionStrings:sbConnectionString",
-              "value": "[listKeys(resourceId(concat('Microsoft.ServiceBus/namespaces/AuthorizationRules'),parameters('serviceBusName'),'RootManageSharedAccessKey'),'2015-08-01').primaryConnectionString]"
+              "value": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', parameters('keyVaultName'), variables('serviceBusSenderConnectionStringSecretName')), '2016-10-01').secretUriWithVersion, ')')]"
             },
             {
               "name": "ConnectionStrings:VotingDataAPIBaseUri",

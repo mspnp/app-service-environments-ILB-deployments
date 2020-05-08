@@ -51,7 +51,9 @@
     "cosmosName": "[concat('votingcosmos-',uniqueString(resourceGroup().id))]",
     "cosmosDatabaseName": "cacheDB",
     "cosmosContainerName": "cacheContainer",
-    "cosmosPartitionKeyPaths": ["/MessageType"],
+    "cosmosPartitionKeyPaths": [
+      "/MessageType"
+    ],
     "sqlServerName": "[concat('sqlserver', uniqueString(resourceGroup().id))]",
     "sqlDatabaseName": "voting",
     "serviceBusName": "[concat('votingservicebus', uniqueString(resourceGroup().id))]",
@@ -110,10 +112,10 @@
       ],
       "properties": {
         "resource": {
-            "id": "[variables('cosmosDatabaseName')]"
+          "id": "[variables('cosmosDatabaseName')]"
         },
-        "options": { 
-          "throughput": "400" 
+        "options": {
+          "throughput": "400"
         }
       }
     },
@@ -125,8 +127,8 @@
         "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', variables('cosmosName'), variables('cosmosDatabaseName'))]"
       ],
       "properties": {
-        "options": { 
-          "throughput": "400" 
+        "options": {
+          "throughput": "400"
         },
         "resource": {
           "id": "[variables('cosmosContainerName')]",
@@ -150,7 +152,6 @@
         }
       }
     },
-
     {
       "type": "Microsoft.Sql/servers",
       "apiVersion": "2015-05-01-preview",
@@ -252,7 +253,31 @@
         "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosName'))]"
       ],
       "properties": {
-        "value": "[listKeys(resourceId(concat('Microsoft.DocumentDB/databaseAccounts'),variables('cosmosName')),'2015-04-08').primaryMasterKey]"
+        "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts',variables('cosmosName')),'2015-04-08').primaryMasterKey]"
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "name": "[concat(variables('keyVaultName'), '/ServiceBusListenerConnectionString')]",
+      "apiVersion": "2015-06-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+        "[resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', variables('serviceBusName'), 'ListenerSharedAccessKey')]"
+      ],
+      "properties": {
+        "value": "[listKeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules',variables('serviceBusName'),'ListenerSharedAccessKey'),'2015-08-01').primaryConnectionString]"
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "name": "[concat(variables('keyVaultName'), '/ServiceBusSenderConnectionString')]",
+      "apiVersion": "2015-06-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+        "[resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', variables('serviceBusName'), 'SenderSharedAccessKey')]"
+      ],
+      "properties": {
+        "value": "[listKeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules',variables('serviceBusName'),'SenderSharedAccessKey'),'2015-08-01').primaryConnectionString]"
       }
     },
     {
@@ -268,7 +293,35 @@
       "properties": {
         "zoneRedundant": "[parameters('zoneRedundant')]"
       }
-    },        
+    },
+    {
+      "type": "Microsoft.ServiceBus/namespaces/AuthorizationRules",
+      "apiVersion": "2017-04-01",
+      "name": "[concat(variables('serviceBusName'), '/ListenerSharedAccessKey')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusName'))]"
+      ],
+      "properties": {
+        "rights": [
+          "Listen"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.ServiceBus/namespaces/AuthorizationRules",
+      "apiVersion": "2017-04-01",
+      "name": "[concat(variables('serviceBusName'), '/SenderSharedAccessKey')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusName'))]"
+      ],
+      "properties": {
+        "rights": [
+          "Send"
+        ]
+      }
+    },
     {
       "type": "Microsoft.ServiceBus/namespaces/queues",
       "apiVersion": "2017-04-01",
@@ -349,10 +402,6 @@
     },
     "sqlDatabaseName": {
       "value": "[variables('sqlDatabaseName')]",
-      "type": "string"
-    },
-    "serviceBusName": {
-      "value": "[variables('serviceBusName')]",
       "type": "string"
     },
     "resourcesStorageAccountName": {

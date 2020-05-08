@@ -15,7 +15,7 @@
     "firewallSubnetPrefix": {
       "type": "string",
       "metadata": {
-        "description": "The IP address prefix the network will use."
+        "description": "The ip prefix the firewall will use."
       }
     },
     "vnetRouteName": {
@@ -140,107 +140,107 @@
           }
         ],
         "networkRuleCollections": [
-            {
-                "name": "Time",
-                "properties": {
-                    "priority": 300,
-                    "action": {
-                        "type": "Allow"
-                    },
-                    "rules": [
-                        {
-                            "name": "NTP",
-                            "protocols": [
-                                "Any"
-                            ],
-                            "sourceAddresses": [
-                                "*"
-                            ],
-                            "destinationAddresses": [
-                                "*"
-                            ],
-                            "destinationPorts": [
-                                "123"
-                            ]
-                        },
-                        {
-                            "name": "Triage",
-                            "protocols": [
-                                "Any"
-                            ],
-                            "sourceAddresses": [
-                                "*"
-                            ],
-                            "destinationAddresses": [
-                                "*"
-                            ],
-                            "destinationPorts": [
-                                "12000"
-                            ]
-                        }
-                    ]
+          {
+            "name": "Time",
+            "properties": {
+              "priority": 300,
+              "action": {
+                "type": "Allow"
+              },
+              "rules": [
+                {
+                  "name": "NTP",
+                  "protocols": [
+                    "Any"
+                  ],
+                  "sourceAddresses": [
+                    "*"
+                  ],
+                  "destinationAddresses": [
+                    "*"
+                  ],
+                  "destinationPorts": [
+                    "123"
+                  ]
+                },
+                {
+                  "name": "Triage",
+                  "protocols": [
+                    "Any"
+                  ],
+                  "sourceAddresses": [
+                    "*"
+                  ],
+                  "destinationAddresses": [
+                    "*"
+                  ],
+                  "destinationPorts": [
+                    "12000"
+                  ]
                 }
-            },
-            {
-                "name": "AzureMonitor",
-                "properties": {
-                    "priority": 500,
-                    "action": {
-                        "type": "Allow"
-                    },
-                    "rules": [
-                        {
-                            "name": "AzureMonitor",
-                            "protocols": [
-                                "TCP"
-                            ],
-                            "sourceAddresses": [
-                                "*"
-                            ],
-                            "destinationAddresses": [
-                                "AzureMonitor"
-                            ],
-                            "destinationPorts": [
-                                "80",
-                                "443"
-                            ]
-                        }
-                    ]
-                }
+              ]
             }
+          },
+          {
+            "name": "AzureMonitor",
+            "properties": {
+              "priority": 500,
+              "action": {
+                "type": "Allow"
+              },
+              "rules": [
+                {
+                  "name": "AzureMonitor",
+                  "protocols": [
+                    "TCP"
+                  ],
+                  "sourceAddresses": [
+                    "*"
+                  ],
+                  "destinationAddresses": [
+                    "AzureMonitor"
+                  ],
+                  "destinationPorts": [
+                    "80",
+                    "443"
+                  ]
+                }
+              ]
+            }
+          }
         ],
         "applicationRuleCollections": [
-            {
-                "name": "AppServiceEnvironment",
-                "properties": {
-                    "priority": 500,
-                    "action": {
-                        "type": "Allow"
+          {
+            "name": "AppServiceEnvironment",
+            "properties": {
+              "priority": 500,
+              "action": {
+                "type": "Allow"
+              },
+              "rules": [
+                {
+                  "name": "AppServiceEnvironment",
+                  "protocols": [
+                    {
+                      "protocolType": "Http",
+                      "port": 80
                     },
-                    "rules": [
-                        {
-                            "name": "AppServiceEnvironment",
-                            "protocols": [
-                                {
-                                    "protocolType": "Http",
-                                    "port": 80
-                                },
-                                {
-                                    "protocolType": "Https",
-                                    "port": 443
-                                }
-                            ],
-                            "fqdnTags": [
-                                "AppServiceEnvironment",
-                                "WindowsUpdate"
-                            ],
-                            "sourceAddresses": [
-                                "*"
-                            ]
-                        }
-                    ]
+                    {
+                      "protocolType": "Https",
+                      "port": 443
+                    }
+                  ],
+                  "fqdnTags": [
+                    "AppServiceEnvironment",
+                    "WindowsUpdate"
+                  ],
+                  "sourceAddresses": [
+                    "*"
+                  ]
                 }
+              ]
             }
+          }
         ]
       }
     }
