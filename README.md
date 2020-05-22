@@ -2,18 +2,18 @@
 
 ## Prerequisites
 
-- [azure-cli](https://docs.microsoft.com/bs-cyrl-ba/cli/azure/install-azure-cli?view=azure-cli-latest) 2.2.0 or older
+- [azure-cli](https://docs.microsoft.com/bs-cyrl-ba/cli/azure/install-azure-cli?view=azure-cli-latest) 2.2.0 or older.
 
-* [sqlcmd](https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-setup-tools?view=sql-server-ver15) installed
+* [sqlcmd](https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-setup-tools?view=sql-server-ver15) installed.
 
-* **jq** tool installed for your platform  
+* **jq** tool installed for your platform:
   `sudo apt-get install jq`
 
-* **dig** tool for your platform. Check that you are able to get the public IP.
-  Install dig tool  
-  `sudo apt install dnsutils`
-
-`dig @resolver1.opendns.com ANY myip.opendns.com +short`
+* **dig** tool for your platform - Check that you are able to get the public IP, and install dig tool:
+  ```
+  sudo apt install dnsutils
+  dig @resolver1.opendns.com ANY myip.opendns.com +short
+  ```
 
 ## Set up environment variables to run the deployment script
 
