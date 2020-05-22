@@ -1,43 +1,39 @@
 # Prepare Jump Box
 
-Activites to be excuted once
+These steps need to be excuted only once.
 
-RDP into the jumpbox (you can get the IP using AzurePortal). The user and password are the ones that you defined as environment variables at the begining.​
+RDP into the jumpbox (you can get the IP using AzurePortal). The user and password are the ones that you defined as environment variables at the begining.
 
-### [Enable Windows Linux Subsystem](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
+## Windows Linux Subsystem
 
-- Open Power shell ​
+- Open Power shell, and enable [Windows Linux Subsystem](https://docs.microsoft.com/en-us/windows/wsl/install-win10):
 
-```
-Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux​1
-```
+  ```
+  Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux​1
+  ```
 
-- Restart the computer will be required ​
+  You will need to restart the computer. 
 
-- Log in the VM again​
+- Log in the VM again. Open the Microsoft Store, then search WSL, choose Ubuntu, and install it.
 
-- Open the Microsoft Store, then search WSL and choose ubuntu and install it​
-  ​
-- Open WSL Ubuntu. It will take some time and you must enter admin user and pass ​
+- Open WSL Ubuntu. When prompted, enter admin user and password. Then execute this command:
 
-- Execute
+  ```
+  sudo apt-get update 
+  ```
 
-```
-sudo apt-get update  ​
-```
+## Azure CLI
 
-### [Azure Client](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-apt?view=azure-cli-latest)
-
-Please execute:
+On command line, execute the following command to install [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-apt?view=azure-cli-latest):
 
 ```
- curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash  ​
- az login​
+ curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+ az login
 ```
 
-### Software Dependencies
+## Software dependencies
 
-It is required:
+The following software packages are required:
 
 - nodejs
 - npm
@@ -45,12 +41,12 @@ It is required:
 - zip
 - .Net Core 3.1
 
-Execute:
+Run the following commands to install the above dependencies:
 
 ```
-​sudo apt-get install nodejs​
+sudo apt-get install nodejs
 sudo apt install npm
-sudo npm install -g bower​​
+sudo npm install -g bower
 sudo apt install zip
 wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 sudo dpkg -i packages-microsoft-prod.deb
@@ -61,6 +57,6 @@ sudo apt-get update
 sudo apt-get install dotnet-sdk-3.1
 ```
 
-### Download source code
+## Download source code
 
-Clone the code from the git repository
+Clone the code from the git repository.
