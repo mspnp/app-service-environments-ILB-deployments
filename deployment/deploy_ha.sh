@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+echo 'Setting Environment Variables - User Defined'
+
+read -p "Resource Group Name? " RGNAME
+read -p "Region/Location? " RGLOCATION
+read -p "SQL Administrator User Name? " SQLADMINUSER
+read -p -s "SQL Administrator Password? " SQLADMINPASSWORD
+read -p "Jumbox User Name? " JUMPBOX_USER
+read -p -s "Jumbox Password? " JUMPBOX_PASSWORD
+read -p -s "Certificate Password? " PFX_PASSWORD
+
+echo 'Setting Environment Variables - Script Defined'
+
 # App url
 APPGW_APP1_URL=votingapp-ha.contoso.com
 APPGW_APP2_URL=testapp-ha.contoso.com
@@ -17,6 +29,8 @@ ASE1_PREFIX=10.0.101.0/24
 ASE2_PREFIX=10.0.102.0/24
 FIREWALL_PREFIX=10.0.200.0/24
 JUMPBOX_PREFIX=10.0.250.0/24
+
+echo 'Generating Self-Signed SSL Certificates'
 
 # create self-signed SSL certificate
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP1_URL}" -out appgw_ha.crt -keyout appgw_ha.key

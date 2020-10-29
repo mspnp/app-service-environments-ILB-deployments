@@ -3,85 +3,82 @@
 ## Prerequisites
 
 - [azure-cli](https://docs.microsoft.com/bs-cyrl-ba/cli/azure/install-azure-cli?view=azure-cli-latest)
-  2.2.0 or older.
-
+  2.2.0 or newer.
 - [sqlcmd](https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-setup-tools?view=sql-server-ver15)
   installed.
-- **jq** tool installed for your platform: `sudo apt-get install jq`
-- **dig** tool for your platform - Check that you are able to get the public IP,
-  and install dig tool:
+- **openssl** tool installed for your platform: `sudo apt-get install openssl`
+  or `brew install openssl`
+- **jq** tool installed for your platform: `sudo apt-get install jq` or
+  `brew install jq`
+- **dig** tool installed for your platform: `sudo apt install dnsutils` or
+  `brew install bind`
+- Check that you are able to get the public IP with `dig`:
 
   ```bash
-  sudo apt install dnsutils
   dig @resolver1.opendns.com ANY myip.opendns.com +short
   ```
 
-## Set up environment variables to run the deployment script
+## Configure AZ CLI
 
-Run the following commands after providing values for the variables.
+First, Login with the `az` CLI with the following command:
 
-**Note:** RGLOCATION should be in the right format. Some examples of valid
-locations are **westus, eastus, northeurope, westeurope, eastasia,
-southeastasia, northcentralus, southcentralus, centralus, eastus2, westus2,
-japaneast, japanwest, brazilsouth**.
+`az login`
 
-```bash
-export RGNAME=yourResourceGroupName
-export RGLOCATION=yourLocation
-export SQLADMINUSER=yoursqlAdminUser
-export JUMPBOX_USER=yourJumpBoxUser
-export ADMIN_USER_ID=$(az ad signed-in-user show --query objectId -o tsv)
-```
+After you've logged in, you'll want to select the subscription you want to
+deploy this solution into. Get a list of subscriptions with the following
+command:
 
-## Enter and export the password for the SQL Server administrator
+`az account list --output table`
 
-**Note:** For SQL Server administrator password requirements, check
-[Password Policy](https://docs.microsoft.com/en-us/sql/relational-databases/security/password-policy?view=sql-server-2017).
+You can then set the subscription you'd like to use with the following command:
 
-```bash
-read -s SQLADMINPASSWORD
-export SQLADMINPASSWORD
-```
+`az account set --subscription "The Subscription Name"`
 
-## Enter and export the password for the jumpbox administrator
+Next, run the `./set_environment_variables.sh` script to set local environment
+variables for use with the deployment scripts. This will have you enter Resource
+group names, usernames, and other user-specific variables.
+
+## Run a Deployment Script
+
+Change directory to the `deployment` folder:
 
 ```bash
-read -s JUMPBOX_PASSWORD
-export JUMPBOX_PASSWORD
+cd deployment
 ```
 
-## Enter and export the password for the SSL certificate
+Then execute either the `deploy_std.sh` or `deploy_ha.sh` for a standard or
+high-availability deployment, respectively.
 
-```
-read -s PFX_PASSWORD
-export PFX_PASSWORD
-```
+The script will prompt you for various parameters to complete and personalize
+the solution deployment, including resource group name, region, and user names
+and passwords for generated accounts.
 
-## Run the deployment script
+As a note, the region/location should be in the right format. Examples of valid
+resource group locations are:
 
-Move to templates directory.
+- brazilsouth
+- centralus
+- eastasia
+- eastus
+- eastus2
+- japaneast
+- japanwest
+- northcentralus
+- northeurope
+- southcentralus
+- southeastasia
+- westeurope
+- westus
+- westus2
 
-```bash
-cd templates
-```
+Also, for the SQL Server administrator password, check the
+[Password Policy](https://docs.microsoft.com/en-us/sql/relational-databases/security/password-policy?view=sql-server-2017)
+requirements.
 
-Then follow the steps for either standard or high availability deployments.
+> **NOTE:** if you're having trouble executing the script, you may need to add
+> the execute permission. For example: `chmod +x deploy_std.sh`
 
-### For standard deployment
-
-```bash
-chmod +x deploy_std.sh
-./deploy_std.sh
-```
-
-### For high availability deployment
-
-```bash
-chmod +x deploy_ha.sh
-./deploy_ha.sh
-```
-
-## Insert Document in Cosmos Db
+## Insert Document in Cosmos DB
 
 1. After deployment ends in the last step, run the following commands to get
    the: resourceURl
