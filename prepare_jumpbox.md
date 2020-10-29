@@ -2,31 +2,36 @@
 
 These steps need to be excuted only once.
 
-RDP into the jumpbox (you can get the IP using AzurePortal). The user and password are the ones that you defined as environment variables at the begining.
+RDP into the jumpbox (you can get the IP using AzurePortal). The user and
+password are the ones that you defined as environment variables at the begining.
 
 ## Windows Linux Subsystem
 
-- Open Power shell, and enable [Windows Linux Subsystem](https://docs.microsoft.com/en-us/windows/wsl/install-win10):
+- Open Power shell, and enable
+  [Windows Linux Subsystem](https://docs.microsoft.com/en-us/windows/wsl/install-win10):
 
-  ```
+  ```powershell
   Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux​1
   ```
 
-  You will need to restart the computer. 
+  You will need to restart the computer.
 
-- Log in the VM again. Open the Microsoft Store, then search WSL, choose Ubuntu, and install it.
+- Log in the VM again. Open the Microsoft Store, then search WSL, choose Ubuntu,
+  and install it.
 
-- Open WSL Ubuntu. When prompted, enter admin user and password. Then execute this command:
+- Open WSL Ubuntu. When prompted, enter admin user and password. Then execute
+  this command:
 
-  ```
-  sudo apt-get update 
+  ```bash
+  sudo apt-get update
   ```
 
 ## Azure CLI
 
-On command line, execute the following command to install [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-apt?view=azure-cli-latest):
+On command line, execute the following command to install
+[Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-apt?view=azure-cli-latest):
 
-```
+```bash
  curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
  az login
 ```
@@ -43,7 +48,7 @@ The following software packages are required:
 
 Run the following commands to install the above dependencies:
 
-```
+```bash
 sudo apt-get install nodejs
 sudo apt install npm
 sudo npm install -g bower
