@@ -34,10 +34,6 @@ You can then set the subscription you'd like to use with the following command:
 
 `az account set --subscription "The Subscription Name"`
 
-Next, run the `./set_environment_variables.sh` script to set local environment
-variables for use with the deployment scripts. This will have you enter Resource
-group names, usernames, and other user-specific variables.
-
 ## Run a Deployment Script
 
 Change directory to the `deployment` folder:
