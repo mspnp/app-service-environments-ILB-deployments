@@ -2,7 +2,7 @@
 
 set -e
 set -u
-# set -x
+set -x
 
 echo 'Setting Environment Variables - User Defined'
 
@@ -238,7 +238,9 @@ cat <<EOF > appgwApps.parameters.json
 EOF
 
 # 8. deploy the application gateway
-ZONES=${ZONE1},${ZONE2}
+# ZONES=${ZONE1},${ZONE2}
+# Only choosing one zone for now, as multi-zone is not out of preview yet
+ZONES=${ZONE1}
 
 az deployment group create --resource-group $RESOURCE_GROUP_NAME \
   --template-file templates/appgw.json \
