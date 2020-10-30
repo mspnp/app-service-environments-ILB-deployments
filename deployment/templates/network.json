@@ -8,7 +8,7 @@
       "metadata": {
         "description": "The location in which the resources should be deployed."
       }
-    },    
+    },
     "vnetAddressPrefix": {
       "type": "string",
       "metadata": {

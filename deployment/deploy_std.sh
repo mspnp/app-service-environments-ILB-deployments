@@ -22,7 +22,6 @@ echo 'Setting Environment Variables - Script Defined'
 # Admin User ID
 ADMIN_USER_ID=$(az ad signed-in-user show --query objectId -o tsv)
 
-
 # App url
 APPGW_APP1_URL=votingapp-std.contoso.com
 APPGW_APP2_URL=testapp-std.contoso.com
@@ -36,6 +35,8 @@ FIREWALL_PREFIX=10.0.200.0/24
 JUMPBOX_PREFIX=10.0.250.0/24
 
 # create self-signed SSL certificate
+echo 'Generating Self-Signed SSL Certificates'
+
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP1_URL}" -out appgw_std.crt -keyout appgw_std.key
 openssl pkcs12 -export -out appgw_std.pfx -in appgw_std.crt -inkey appgw_std.key -passout pass:$PFX_PASSWORD
 CERT_DATA_1=$(cat appgw_std.pfx | base64 | tr -d '\n' | tr -d '\r')
@@ -47,6 +48,8 @@ CERT_DATA_2=$(cat appgw_std.pfx | base64 | tr -d '\n' | tr -d '\r')
 rm appgw_std.crt appgw_std.key appgw_std.pfx
 
 # 1. creates the resource group
+echo 'Creating Resource Group'
+
 az group create --name "${RESOURCE_GROUP_NAME}" --location "${RESOURCE_GROUP_LOCATION}"
 
 # 2. deploy global network related resources
@@ -56,7 +59,13 @@ VNET_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n network --query 
 VNET_ROUTE_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n network --query properties.outputs.vnetRouteName.value -o tsv)
 
 # 3. deploy ASE
-az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/ase.json -n ase --parameters vnetName=$VNET_NAME vnetRouteName=$VNET_ROUTE_NAME aseSubnetAddressPrefix=$ASE_PREFIX
+echo 'Deploying Application Service Environment'
+
+az deployment group create --resource-group $RESOURCE_GROUP_NAME \
+  --template-file templates/ase.json \
+  -n ase \
+  --parameters vnetName=$VNET_NAME vnetRouteName=$VNET_ROUTE_NAME aseSubnetAddressPrefix=$ASE_PREFIX
+
 ASE_DNS_SUFFIX=$(az deployment group show -g $RESOURCE_GROUP_NAME -n ase --query properties.outputs.dnsSuffix.value -o tsv)
 ASE_SUBNET_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n ase --query properties.outputs.aseSubnetName.value -o tsv)
 ASE_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n ase --query properties.outputs.aseName.value -o tsv)
@@ -68,24 +77,34 @@ ASE_ILB_IP_ADDRESS=$(az resource show --ids ${ASE_ID}/capacities/virtualip --api
 ENDPOINTS_LIST=$(az rest --method get --uri $ASE_ID/inboundnetworkdependenciesendpoints?api-version=2016-09-01 | jq '.value[0].endpoints | join(", ")' -j)
 
 # Deploy AF
-az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/firewall.json \
-    --parameters vnetName=$VNET_NAME firewallSubnetPrefix=$FIREWALL_PREFIX vnetRouteName=$VNET_ROUTE_NAME \
-                 aseManagementEndpointsList="$ENDPOINTS_LIST"
+echo 'Deploying Application Firewall'
+
+az deployment group create --resource-group $RESOURCE_GROUP_NAME \
+  --template-file templates/firewall.json \
+  --parameters vnetName=$VNET_NAME firewallSubnetPrefix=$FIREWALL_PREFIX vnetRouteName=$VNET_ROUTE_NAME aseManagementEndpointsList="$ENDPOINTS_LIST"
 
 # 4. deploy the private DNS zone
 az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/dns.json -n dns --parameters vnetName=$VNET_NAME zoneName=$ASE_DNS_SUFFIX ipAddress=$ASE_ILB_IP_ADDRESS
 
 # 5. deploy jumpbox
-az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/jumpbox.json --parameters vnetName=$VNET_NAME \
-    subnetAddressPrefix=$JUMPBOX_PREFIX adminUsername=$JUMPBOX_USER adminPassword=$JUMPBOX_PASSWORD
+echo 'Deploying Jumpbox'
+
+az deployment group create --resource-group $RESOURCE_GROUP_NAME \
+  --template-file templates/jumpbox.json \
+  --parameters vnetName=$VNET_NAME subnetAddressPrefix=$JUMPBOX_PREFIX adminUsername=$JUMPBOX_USER adminPassword=$JUMPBOX_PASSWORD
+
 JUMPBOX_PUBLIC_IP=$(az deployment group show -g $RESOURCE_GROUP_NAME -n jumpbox --query properties.outputs.jumpboxPublicIpAddress.value -o tsv)
 JUMPBOX_SUBNET_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n jumpbox --query properties.outputs.jumpboxSubnetName.value -o tsv)
 
 # 6. deploy services: cosmos, sql, servicebus and storage
+echo 'Deploying Cosmos DB, SQL Database, Service Bus, and Storage Accounts'
+
 ALLOWED_SUBNET_NAMES=${ASE_SUBNET_NAME},${JUMPBOX_SUBNET_NAME}
-az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/services.json \
-    --parameters vnetName=$VNET_NAME allowedSubnetNames=$ALLOWED_SUBNET_NAMES \
-                 sqlAdminUserName=$SQL_ADMIN_USER sqlAdminPassword=$SQL_ADMIN_PASSWORD sqlAadAdminSid=$ADMIN_USER_ID
+
+az deployment group create --resource-group $RESOURCE_GROUP_NAME \
+  --template-file templates/services.json \
+  --parameters vnetName=$VNET_NAME allowedSubnetNames=$ALLOWED_SUBNET_NAMES sqlAdminUserName=$SQL_ADMIN_USER sqlAdminPassword=$SQL_ADMIN_PASSWORD sqlAadAdminSid=$ADMIN_USER_ID
+
 COSMOSDB_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n services --query properties.outputs.cosmosDbName.value -o tsv)
 SQL_SERVER=$(az deployment group show -g $RESOURCE_GROUP_NAME -n services --query properties.outputs.sqlServerName.value -o tsv)
 SQL_DATABASE=$(az deployment group show -g $RESOURCE_GROUP_NAME -n services --query properties.outputs.sqlDatabaseName.value -o tsv)
@@ -94,29 +113,40 @@ RESOURCES_STORAGE_ACCOUNT=$(az deployment group show -g $RESOURCE_GROUP_NAME -n 
 RESOURCES_CONTAINER_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n services --query properties.outputs.resourcesContainerName.value -o tsv)
 
 # Uploads image to the storage account
-az storage blob upload -c $RESOURCES_CONTAINER_NAME -f Microsoft_Azure_logo_small.png -n Microsoft_Azure_logo_small.png --account-name $RESOURCES_STORAGE_ACCOUNT
-RESOURCE_URL="$(az storage account show -n $RESOURCES_STORAGE_ACCOUNT --query primaryEndpoints.blob -o tsv)$RESOURCES_CONTAINER_NAME/Microsoft_Azure_logo_small.png"
+echo 'Uploading Sample Images to Storage'
+
+az storage blob upload -c $RESOURCES_CONTAINER_NAME \
+  -f Microsoft_Azure_logo_small.png \
+  -n Microsoft_Azure_logo_small.png \
+  --account-name $RESOURCES_STORAGE_ACCOUNT
+
+RESOURCE_URL="$(az storage account show -g $RESOURCE_GROUP_NAME -n $RESOURCES_STORAGE_ACCOUNT --query primaryEndpoints.blob -o tsv)$RESOURCES_CONTAINER_NAME/Microsoft_Azure_logo_small.png"
 
 # 7. deploy the application services inside the ASE
-az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/sites.json -n sites --parameters aseName=$ASE_NAME \
-    vnetName=$VNET_NAME redisSubnetAddressPrefix=$REDIS_PREFIX cosmosDbName=$COSMOSDB_NAME \
-    sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME \
-    aseDnsSuffix=$ASE_DNS_SUFFIX
-INTERNAL_APP1_URL=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingAppUrl.value -o tsv) && \
-INTERNAL_APP2_URL=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.testAppUrl.value -o tsv) && \
-VOTING_WEB_APP_PRINCIPAL_ID=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingWebAppIdentityPrincipalId.value -o tsv) && \
-VOTING_COUNTER_FUNCTION_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingFunctionName.value -o tsv) && \
-VOTING_COUNTER_FUNCTION_PRINCIPAL_ID=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingCounterFunctionIdentityPrincipalId.value -o tsv) && \
-VOTING_API_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingApiName.value -o tsv) && \
+echo 'Deploying App Services into the Application Service Environment'
+
+az deployment group create --resource-group $RESOURCE_GROUP_NAME \
+  --template-file templates/sites.json \
+  -n sites \
+  --parameters aseName=$ASE_NAME vnetName=$VNET_NAME redisSubnetAddressPrefix=$REDIS_PREFIX cosmosDbName=$COSMOSDB_NAME sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME aseDnsSuffix=$ASE_DNS_SUFFIX
+
+INTERNAL_APP1_URL=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingAppUrl.value -o tsv)
+INTERNAL_APP2_URL=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.testAppUrl.value -o tsv)
+VOTING_WEB_APP_PRINCIPAL_ID=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingWebAppIdentityPrincipalId.value -o tsv)
+VOTING_COUNTER_FUNCTION_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingFunctionName.value -o tsv)
+VOTING_COUNTER_FUNCTION_PRINCIPAL_ID=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingCounterFunctionIdentityPrincipalId.value -o tsv)
+VOTING_API_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingApiName.value -o tsv)
 VOTING_API_PRINCIPAL_ID=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingApiIdentityPrincipalId.value -o tsv)
 
 # Deploy RBAC for resources after AAD propagation
+echo 'Configuring Resource-Based Access Control'
+
 until az ad sp show --id ${VOTING_WEB_APP_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id ${VOTING_API_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id ${VOTING_COUNTER_FUNCTION_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/rbac.json \
-    --parameters votingWebAppIdentityPrincipalId=$VOTING_WEB_APP_PRINCIPAL_ID votingCounterFunctionIdentityPrincipalId=$VOTING_COUNTER_FUNCTION_PRINCIPAL_ID \
-                 keyVaultName=$KEYVAULT_NAME
+az deployment group create --resource-group $RESOURCE_GROUP_NAME \
+  --template-file templates/rbac.json \
+  --parameters votingWebAppIdentityPrincipalId=$VOTING_WEB_APP_PRINCIPAL_ID votingCounterFunctionIdentityPrincipalId=$VOTING_COUNTER_FUNCTION_PRINCIPAL_ID keyVaultName=$KEYVAULT_NAME
 
 # Generates parameters file for appgw arm script
 cat <<EOF > appgwApps.parameters.json
@@ -153,12 +183,15 @@ cat <<EOF > appgwApps.parameters.json
 EOF
 
 # 8. deploy the application gateway
-az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/appgw.json --parameters vnetName=$VNET_NAME appgwSubnetAddressPrefix=$APPGW_PREFIX appgwApplications=@appgwApps.parameters.json
+echo 'Deploying Application Gateway'
+
+az deployment group create --resource-group $RESOURCE_GROUP_NAME \
+  --template-file templates/appgw.json \
+  --parameters vnetName=$VNET_NAME appgwSubnetAddressPrefix=$APPGW_PREFIX appgwApplications=@appgwApps.parameters.json
 APPGW_PUBLIC_IP=$(az deployment group show -g $RESOURCE_GROUP_NAME -n appgw --query properties.outputs.appGwPublicIpAddress.value -o tsv)
 
 # Removes autogenerated parameter file
 rm appgwApps.parameters.json
-
 
 cat << EOF
 

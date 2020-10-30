@@ -40,9 +40,9 @@ ASE2_PREFIX=10.0.102.0/24
 FIREWALL_PREFIX=10.0.200.0/24
 JUMPBOX_PREFIX=10.0.250.0/24
 
+# create self-signed SSL certificate
 echo 'Generating Self-Signed SSL Certificates'
 
-# create self-signed SSL certificate
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP1_URL}" -out appgw_ha.crt -keyout appgw_ha.key
 openssl pkcs12 -export -out appgw_ha.pfx -in appgw_ha.crt -inkey appgw_ha.key -passout pass:$PFX_PASSWORD
 CERT_DATA_1=$(cat appgw_ha.pfx | base64 | tr -d '\n' | tr -d '\r')
@@ -269,7 +269,7 @@ Replace the whole json payload with below content and click **Save**
 
 c. then select **Firewall and virtual network**, and delete your public IP
 
-2) Map the Azure Application Gateway public ip address to the voting and test application domain names. To do that, please open `C:\windows\system32\drivers\etc\hosts` and add the following records in local host file:
+2) Map the Azure Application Gateway public ip address to the voting and test application domain names. To do that, please open `C:\windows\system32\drivers\etc\hosts` or `/etc/hosts` and add the following records in local host file:
     ${APPGW_PUBLIC_IP} ${APPGW_APP1_URL}
     ${APPGW_PUBLIC_IP} ${APPGW_APP2_URL}
 

@@ -78,7 +78,7 @@
               }
             ]
           }
-        }        
+        }
       ]
     },
     {
@@ -90,10 +90,10 @@
         "[resourceId('Microsoft.Network/privateDnsZones', parameters('zoneName'))]"
       ],
       "properties": {
-          "registrationEnabled": false,
-          "virtualNetwork": {
-              "id": "[variables('vnetId')]"
-          }
+        "registrationEnabled": false,
+        "virtualNetwork": {
+          "id": "[variables('vnetId')]"
+        }
       }
     }
   ],
