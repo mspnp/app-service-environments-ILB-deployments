@@ -2,7 +2,7 @@
 
 set -e
 set -u
-set -x
+# set -x
 
 echo 'Setting Environment Variables - User Defined'
 
