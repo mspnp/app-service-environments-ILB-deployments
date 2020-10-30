@@ -19,6 +19,9 @@ echo ''
 
 echo 'Setting Environment Variables - Script Defined'
 
+# Admin User ID
+ADMIN_USER_ID=$(az ad signed-in-user show --query objectId -o tsv)
+
 # App url
 APPGW_APP1_URL=votingapp-ha.contoso.com
 APPGW_APP2_URL=testapp-ha.contoso.com
@@ -142,7 +145,7 @@ az storage blob upload -c $RESOURCES_CONTAINER_NAME \
   -n Microsoft_Azure_logo_small.png \
   --account-name $RESOURCES_STORAGE_ACCOUNT
 
-RESOURCE_URL="$(az storage account show -n $RESOURCES_STORAGE_ACCOUNT --query primaryEndpoints.blob -o tsv)$RESOURCES_CONTAINER_NAME/Microsoft_Azure_logo_small.png"
+RESOURCE_URL="$(az storage account show -g $RESOURCE_GROUP_NAME -n $RESOURCES_STORAGE_ACCOUNT --query primaryEndpoints.blob -o tsv)$RESOURCES_CONTAINER_NAME/Microsoft_Azure_logo_small.png"
 
 # 7. deploy the application services inside the ASE - ZONE 1 & 2
 echo 'Deploying App Services into the Application Service Environment'

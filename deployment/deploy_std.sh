@@ -1,5 +1,28 @@
 #!/usr/bin/env bash
 
+set -e
+set -u
+# set -x
+
+echo 'Setting Environment Variables - User Defined'
+
+read -p "Resource Group Name? " RESOURCE_GROUP_NAME
+read -p "Region/Location? " RESOURCE_GROUP_LOCATION
+read -p "SQL Administrator User Name? " SQL_ADMIN_USER
+read -s -p "SQL Administrator Password? " SQL_ADMIN_PASSWORD
+echo ''
+read -p "Jumbox User Name? " JUMPBOX_USER
+read -s -p "Jumbox Password? " JUMPBOX_PASSWORD
+echo ''
+read -s -p "Certificate Password? " PFX_PASSWORD
+echo ''
+
+echo 'Setting Environment Variables - Script Defined'
+
+# Admin User ID
+ADMIN_USER_ID=$(az ad signed-in-user show --query objectId -o tsv)
+
+
 # App url
 APPGW_APP1_URL=votingapp-std.contoso.com
 APPGW_APP2_URL=testapp-std.contoso.com
@@ -24,20 +47,20 @@ CERT_DATA_2=$(cat appgw_std.pfx | base64 | tr -d '\n' | tr -d '\r')
 rm appgw_std.crt appgw_std.key appgw_std.pfx
 
 # 1. creates the resource group
-az group create --name "${RGNAME}" --location "${RGLOCATION}"
+az group create --name "${RESOURCE_GROUP_NAME}" --location "${RESOURCE_GROUP_LOCATION}"
 
 # 2. deploy global network related resources
-VNET_NAME=$(az network vnet list -g $RGNAME --query "[?contains(addressSpace.addressPrefixes, '${NET_PREFIX}')]" --query [0].name -o tsv)
-az deployment group create --resource-group $RGNAME --template-file templates/network.json --parameters existentVnetName=$VNET_NAME vnetAddressPrefix=$NET_PREFIX
-VNET_NAME=$(az deployment group show -g $RGNAME -n network --query properties.outputs.vnetName.value -o tsv)
-VNET_ROUTE_NAME=$(az deployment group show -g $RGNAME -n network --query properties.outputs.vnetRouteName.value -o tsv)
+VNET_NAME=$(az network vnet list -g $RESOURCE_GROUP_NAME --query "[?contains(addressSpace.addressPrefixes, '${NET_PREFIX}')]" --query [0].name -o tsv)
+az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/network.json --parameters existentVnetName=$VNET_NAME vnetAddressPrefix=$NET_PREFIX
+VNET_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n network --query properties.outputs.vnetName.value -o tsv)
+VNET_ROUTE_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n network --query properties.outputs.vnetRouteName.value -o tsv)
 
 # 3. deploy ASE
-az deployment group create --resource-group $RGNAME --template-file templates/ase.json -n ase --parameters vnetName=$VNET_NAME vnetRouteName=$VNET_ROUTE_NAME aseSubnetAddressPrefix=$ASE_PREFIX
-ASE_DNS_SUFFIX=$(az deployment group show -g $RGNAME -n ase --query properties.outputs.dnsSuffix.value -o tsv)
-ASE_SUBNET_NAME=$(az deployment group show -g $RGNAME -n ase --query properties.outputs.aseSubnetName.value -o tsv)
-ASE_NAME=$(az deployment group show -g $RGNAME -n ase --query properties.outputs.aseName.value -o tsv)
-ASE_ID=$(az deployment group show -g $RGNAME -n ase --query properties.outputs.aseId.value -o tsv)
+az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/ase.json -n ase --parameters vnetName=$VNET_NAME vnetRouteName=$VNET_ROUTE_NAME aseSubnetAddressPrefix=$ASE_PREFIX
+ASE_DNS_SUFFIX=$(az deployment group show -g $RESOURCE_GROUP_NAME -n ase --query properties.outputs.dnsSuffix.value -o tsv)
+ASE_SUBNET_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n ase --query properties.outputs.aseSubnetName.value -o tsv)
+ASE_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n ase --query properties.outputs.aseName.value -o tsv)
+ASE_ID=$(az deployment group show -g $RESOURCE_GROUP_NAME -n ase --query properties.outputs.aseId.value -o tsv)
 ASE_ILB_IP_ADDRESS=$(az resource show --ids ${ASE_ID}/capacities/virtualip --api-version 2018-02-01 --query internalIpAddress --output tsv)
 
 # Obtain ASE management IP endpoints
@@ -45,53 +68,53 @@ ASE_ILB_IP_ADDRESS=$(az resource show --ids ${ASE_ID}/capacities/virtualip --api
 ENDPOINTS_LIST=$(az rest --method get --uri $ASE_ID/inboundnetworkdependenciesendpoints?api-version=2016-09-01 | jq '.value[0].endpoints | join(", ")' -j)
 
 # Deploy AF
-az deployment group create --resource-group $RGNAME --template-file templates/firewall.json \
+az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/firewall.json \
     --parameters vnetName=$VNET_NAME firewallSubnetPrefix=$FIREWALL_PREFIX vnetRouteName=$VNET_ROUTE_NAME \
                  aseManagementEndpointsList="$ENDPOINTS_LIST"
 
 # 4. deploy the private DNS zone
-az deployment group create --resource-group $RGNAME --template-file templates/dns.json -n dns --parameters vnetName=$VNET_NAME zoneName=$ASE_DNS_SUFFIX ipAddress=$ASE_ILB_IP_ADDRESS
+az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/dns.json -n dns --parameters vnetName=$VNET_NAME zoneName=$ASE_DNS_SUFFIX ipAddress=$ASE_ILB_IP_ADDRESS
 
 # 5. deploy jumpbox
-az deployment group create --resource-group $RGNAME --template-file templates/jumpbox.json --parameters vnetName=$VNET_NAME \
+az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/jumpbox.json --parameters vnetName=$VNET_NAME \
     subnetAddressPrefix=$JUMPBOX_PREFIX adminUsername=$JUMPBOX_USER adminPassword=$JUMPBOX_PASSWORD
-JUMPBOX_PUBLIC_IP=$(az deployment group show -g $RGNAME -n jumpbox --query properties.outputs.jumpboxPublicIpAddress.value -o tsv)
-JUMPBOX_SUBNET_NAME=$(az deployment group show -g $RGNAME -n jumpbox --query properties.outputs.jumpboxSubnetName.value -o tsv)
+JUMPBOX_PUBLIC_IP=$(az deployment group show -g $RESOURCE_GROUP_NAME -n jumpbox --query properties.outputs.jumpboxPublicIpAddress.value -o tsv)
+JUMPBOX_SUBNET_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n jumpbox --query properties.outputs.jumpboxSubnetName.value -o tsv)
 
 # 6. deploy services: cosmos, sql, servicebus and storage
 ALLOWED_SUBNET_NAMES=${ASE_SUBNET_NAME},${JUMPBOX_SUBNET_NAME}
-az deployment group create --resource-group $RGNAME --template-file templates/services.json \
+az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/services.json \
     --parameters vnetName=$VNET_NAME allowedSubnetNames=$ALLOWED_SUBNET_NAMES \
-                 sqlAdminUserName=$SQLADMINUSER sqlAdminPassword=$SQLADMINPASSWORD sqlAadAdminSid=$ADMIN_USER_ID
-COSMOSDB_NAME=$(az deployment group show -g $RGNAME -n services --query properties.outputs.cosmosDbName.value -o tsv)
-SQL_SERVER=$(az deployment group show -g $RGNAME -n services --query properties.outputs.sqlServerName.value -o tsv)
-SQL_DATABASE=$(az deployment group show -g $RGNAME -n services --query properties.outputs.sqlDatabaseName.value -o tsv)
-KEYVAULT_NAME=$(az deployment group show -g $RGNAME -n services --query properties.outputs.keyVaultName.value -o tsv)
-RESOURCES_STORAGE_ACCOUNT=$(az deployment group show -g $RGNAME -n services --query properties.outputs.resourcesStorageAccountName.value -o tsv)
-RESOURCES_CONTAINER_NAME=$(az deployment group show -g $RGNAME -n services --query properties.outputs.resourcesContainerName.value -o tsv)
+                 sqlAdminUserName=$SQL_ADMIN_USER sqlAdminPassword=$SQL_ADMIN_PASSWORD sqlAadAdminSid=$ADMIN_USER_ID
+COSMOSDB_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n services --query properties.outputs.cosmosDbName.value -o tsv)
+SQL_SERVER=$(az deployment group show -g $RESOURCE_GROUP_NAME -n services --query properties.outputs.sqlServerName.value -o tsv)
+SQL_DATABASE=$(az deployment group show -g $RESOURCE_GROUP_NAME -n services --query properties.outputs.sqlDatabaseName.value -o tsv)
+KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n services --query properties.outputs.keyVaultName.value -o tsv)
+RESOURCES_STORAGE_ACCOUNT=$(az deployment group show -g $RESOURCE_GROUP_NAME -n services --query properties.outputs.resourcesStorageAccountName.value -o tsv)
+RESOURCES_CONTAINER_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n services --query properties.outputs.resourcesContainerName.value -o tsv)
 
 # Uploads image to the storage account
 az storage blob upload -c $RESOURCES_CONTAINER_NAME -f Microsoft_Azure_logo_small.png -n Microsoft_Azure_logo_small.png --account-name $RESOURCES_STORAGE_ACCOUNT
 RESOURCE_URL="$(az storage account show -n $RESOURCES_STORAGE_ACCOUNT --query primaryEndpoints.blob -o tsv)$RESOURCES_CONTAINER_NAME/Microsoft_Azure_logo_small.png"
 
 # 7. deploy the application services inside the ASE
-az deployment group create --resource-group $RGNAME --template-file templates/sites.json -n sites --parameters aseName=$ASE_NAME \
+az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/sites.json -n sites --parameters aseName=$ASE_NAME \
     vnetName=$VNET_NAME redisSubnetAddressPrefix=$REDIS_PREFIX cosmosDbName=$COSMOSDB_NAME \
     sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME \
     aseDnsSuffix=$ASE_DNS_SUFFIX
-INTERNAL_APP1_URL=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingAppUrl.value -o tsv) && \
-INTERNAL_APP2_URL=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.testAppUrl.value -o tsv) && \
-VOTING_WEB_APP_PRINCIPAL_ID=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingWebAppIdentityPrincipalId.value -o tsv) && \
-VOTING_COUNTER_FUNCTION_NAME=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingFunctionName.value -o tsv) && \
-VOTING_COUNTER_FUNCTION_PRINCIPAL_ID=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingCounterFunctionIdentityPrincipalId.value -o tsv) && \
-VOTING_API_NAME=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingApiName.value -o tsv) && \
-VOTING_API_PRINCIPAL_ID=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingApiIdentityPrincipalId.value -o tsv)
+INTERNAL_APP1_URL=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingAppUrl.value -o tsv) && \
+INTERNAL_APP2_URL=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.testAppUrl.value -o tsv) && \
+VOTING_WEB_APP_PRINCIPAL_ID=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingWebAppIdentityPrincipalId.value -o tsv) && \
+VOTING_COUNTER_FUNCTION_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingFunctionName.value -o tsv) && \
+VOTING_COUNTER_FUNCTION_PRINCIPAL_ID=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingCounterFunctionIdentityPrincipalId.value -o tsv) && \
+VOTING_API_NAME=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingApiName.value -o tsv) && \
+VOTING_API_PRINCIPAL_ID=$(az deployment group show -g $RESOURCE_GROUP_NAME -n sites --query properties.outputs.votingApiIdentityPrincipalId.value -o tsv)
 
 # Deploy RBAC for resources after AAD propagation
 until az ad sp show --id ${VOTING_WEB_APP_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id ${VOTING_API_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id ${VOTING_COUNTER_FUNCTION_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-az deployment group create --resource-group $RGNAME --template-file templates/rbac.json \
+az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/rbac.json \
     --parameters votingWebAppIdentityPrincipalId=$VOTING_WEB_APP_PRINCIPAL_ID votingCounterFunctionIdentityPrincipalId=$VOTING_COUNTER_FUNCTION_PRINCIPAL_ID \
                  keyVaultName=$KEYVAULT_NAME
 
@@ -130,8 +153,8 @@ cat <<EOF > appgwApps.parameters.json
 EOF
 
 # 8. deploy the application gateway
-az deployment group create --resource-group $RGNAME --template-file templates/appgw.json --parameters vnetName=$VNET_NAME appgwSubnetAddressPrefix=$APPGW_PREFIX appgwApplications=@appgwApps.parameters.json
-APPGW_PUBLIC_IP=$(az deployment group show -g $RGNAME -n appgw --query properties.outputs.appGwPublicIpAddress.value -o tsv)
+az deployment group create --resource-group $RESOURCE_GROUP_NAME --template-file templates/appgw.json --parameters vnetName=$VNET_NAME appgwSubnetAddressPrefix=$APPGW_PREFIX appgwApplications=@appgwApps.parameters.json
+APPGW_PUBLIC_IP=$(az deployment group show -g $RESOURCE_GROUP_NAME -n appgw --query properties.outputs.appGwPublicIpAddress.value -o tsv)
 
 # Removes autogenerated parameter file
 rm appgwApps.parameters.json
@@ -145,7 +168,7 @@ NEXT STEPS
 To finish setting up the managed identities as users in the Sql Database run the following script authenticated as the AAD Admin for the database server
 Instructions on create_sqlserver_msi_integration.md
 
-1)  Please, go to azure portal in the resource group: ${RGNAME} and click on **Azure Cosmos Db Account**
+1)  Please, go to azure portal in the resource group: ${RESOURCE_GROUP_NAME} and click on **Azure Cosmos Db Account**
 a. then select **Firewall and virtual network**, there you can see:   
 **Add IP ranges to allow access from the internet or your on-premises networks**, so click on  
 **Add my current ip**, and finally save it.
