@@ -239,7 +239,9 @@ EOF
 
 # 8. deploy the application gateway
 # ZONES=${ZONE1},${ZONE2}
-# Only choosing one zone for now, as multi-zone is not out of preview yet
+# TODO: multiple zones aren't working as expected, due to the Public IP not allowing multiple zones in a standard deployment; this will need to be improved
+# right now, it would most likely require two app gateway deployments with traffic manager in front of them.
+# unless the regional deployment spans zones, in which case, we can remove the ZONES variable here completely.
 ZONES=${ZONE1}
 
 az deployment group create --resource-group $RESOURCE_GROUP_NAME \

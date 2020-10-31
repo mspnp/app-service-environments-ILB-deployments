@@ -1,6 +1,6 @@
 # Prepare Jump Box
 
-These steps need to be excuted only once.
+These steps need to be executed only once.
 
 RDP into the jumpbox (you can get the IP using AzurePortal). The user and
 password are the ones that you defined as environment variables at the begining.
