@@ -20,10 +20,60 @@ Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI
 Set-ExecutionPolicy RemoteSigned
 ```
 
-- Open a new PowerShell console and run a PowerShell script - choose standard or high availability deployment as per your scenario.
+- Open a new PowerShell console and run a PowerShell script - run this set of commands in order to be able to run AZ CLI commands in Powershell
 
 ```
-.\sqlserver_msi_std.ps1   **Your resource group**  **your azure account name**
-or
-.\sqlserver_msi_ha.ps1  **Your resource group**  **your azure account name**
+$azCliPath = "C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin"
+$CurrentPath =(Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
+$NewPath = “$CurrentPath;$azCliPath”
+Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $NewPath
+Set-Alias -Name az -Value "C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin\az.cmd"
+```
+
+- Choose standard or high availability deployment as per your scenario.
+
+- If you chose standard deployment use run these commands
+
+```
+$RGNAME = '[YOUR RESOURCE GROUP NAME]'
+$USER = '[YOUR AZURE ACCOUNT]'
+
+az login
+$SQL_SERVER = $(az deployment group show -g $RGNAME -n services --query properties.outputs.sqlServerName.value -o tsv)
+$SQL_DATABASE = $(az deployment group show -g $RGNAME -n services --query properties.outputs.sqlDatabaseName.value -o tsv)
+
+$VOTING_COUNTER_FUNCTION_NAME = $(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingFunctionName.value -o tsv)
+$VOTING_API_NAME = $(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingApiName.value -o tsv)
+
+$SQL = "CREATE USER [$VOTING_COUNTER_FUNCTION_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_COUNTER_FUNCTION_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_COUNTER_FUNCTION_NAME];CREATE USER [$VOTING_API_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_API_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_API_NAME];"
+
+sqlcmd -S tcp:$SQL_SERVER.database.windows.net,1433 -d $SQL_DATABASE -N -l 30 -U $USER -G -Q $SQL
+
+$SQL_TABLE_OBJECT = "IF OBJECT_ID('dbo.Counts', 'U') IS NULL CREATE TABLE Counts(ID INT NOT NULL IDENTITY PRIMARY KEY, Candidate VARCHAR(32) NOT NULL, Count INT);"
+
+sqlcmd -S tcp:$SQL_SERVER.database.windows.net,1433 -d $SQL_DATABASE -N -l 30 -U $USER -G -Q $SQL_TABLE_OBJECT
+```
+
+- If you chose standard deployment use run these commands
+
+```
+$RGNAME = '[YOUR RESOURCE GROUP NAME]'
+$USER = '[YOUR AZURE ACCOUNT]'
+
+az login
+$SQL_SERVER = $(az deployment group show -g $RGNAME -n services --query properties.outputs.sqlServerName.value -o tsv)
+$SQL_DATABASE = $(az deployment group show -g $RGNAME -n services --query properties.outputs.sqlDatabaseName.value -o tsv)
+
+$VOTING_COUNTER_FUNCTION1_NAME = $(az deployment group show -g $RGNAME -n sites1 --query properties.outputs.votingFunctionName.value -o tsv)
+$VOTING_COUNTER_FUNCTION2_NAME = $(az deployment group show -g $RGNAME -n sites2 --query properties.outputs.votingFunctionName.value -o tsv)
+$VOTING_API1_NAME = $(az deployment group show -g $RGNAME -n sites1 --query properties.outputs.votingApiName.value -o tsv)
+$VOTING_API2_NAME = $(az deployment group show -g $RGNAME -n sites2 --query properties.outputs.votingApiName.value -o tsv)
+
+$SQL = "CREATE USER [$VOTING_COUNTER_FUNCTION1_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_COUNTER_FUNCTION1_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_COUNTER_FUNCTION1_NAME];CREATE USER [$VOTING_API1_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_API1_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_API1_NAME];CREATE USER [$VOTING_COUNTER_FUNCTION2_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_COUNTER_FUNCTION2_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_COUNTER_FUNCTION2_NAME];CREATE USER [$VOTING_API2_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_API2_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_API2_NAME];"
+
+sqlcmd -S tcp:$SQL_SERVER.database.windows.net,1433 -d $SQL_DATABASE -N -l 30 -U $USER -G -Q $SQL
+
+$SQL_TABLE_OBJECT = "IF OBJECT_ID('dbo.Counts', 'U') IS NULL CREATE TABLE Counts(ID INT NOT NULL IDENTITY PRIMARY KEY, Candidate VARCHAR(32) NOT NULL, Count INT);"
+
+sqlcmd -S tcp:$SQL_SERVER.database.windows.net,1433 -d $SQL_DATABASE -N -l 30 -U $USER -G -Q $SQL_TABLE_OBJECT
 ```

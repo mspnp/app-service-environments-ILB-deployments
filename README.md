@@ -95,8 +95,9 @@ The following snippet shows an example of the JSON response:
 - Select **Firewall and virtual network**, there you can see:  
   **Add IP ranges to allow access from the internet or your on-premises networks**. 
   Click on **Add my current ip**, and save it.
+  In Exceptions section below, check the "Allow access from Azure Protal" option.
 
-- Select **cacheContainer**, then click on **Items**. Click on **New Item**. Replace the whole json payload with above content and click **Save**.
+- From Cosmos Db Data Explorer, Select **cacheContainer**, then click on **Items**. Click on **New Item**. Replace the whole json payload with above content and click **Save**.
 
 - Go to Azure portal and open the resource group of deployment above. Click on **Azure Cosmos Db Account**, then select **Firewall and virtual network**, then delete your public ip.
 
