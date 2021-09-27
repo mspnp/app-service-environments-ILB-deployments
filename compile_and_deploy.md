@@ -17,7 +17,7 @@
 - Move to code directory:
 
  ```
- cd ASE-ILB-RA-RI/code
+ cd app-service-environments-ILB-deployments/code
  ```
 
 ##  Compile applications

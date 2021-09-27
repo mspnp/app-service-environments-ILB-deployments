@@ -63,3 +63,7 @@ sudo apt-get install dotnet-sdk-5.0
 ## Download source code
 
 Clone the code from the git repository.
+
+```
+git clone https://github.com/mspnp/app-service-environments-ILB-deployments.git
+```
