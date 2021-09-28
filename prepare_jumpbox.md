@@ -21,7 +21,7 @@ RDP into the jumpbox (you can get the IP using AzurePortal). The user and passwo
 
 - Open WSL Ubuntu. When prompted, enter admin user and password. Then execute this command:
 
-  ```
+  ```bash
   sudo apt-get update 
   ```
 
@@ -65,6 +65,6 @@ sudo apt-get install dotnet-sdk-5.0
 
 Clone the code from the git repository.
 
-```
+```bash
 git clone https://github.com/mspnp/app-service-environments-ILB-deployments.git
 ```
