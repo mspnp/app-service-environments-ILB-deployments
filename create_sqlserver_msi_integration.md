@@ -18,15 +18,7 @@ RDP into the jumpbox (you can get the IP using Azure Portal). The user and passw
     Set-ExecutionPolicy RemoteSigned
     ```
 
-- Open a new PowerShell console and run this set of commands in order to be able to run AZ CLI commands in Powershell
-
-    ```powershell
-    $azCliPath = "C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin"
-    $CurrentPath =(Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
-    $NewPath = “$CurrentPath;$azCliPath”
-    Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $NewPath
-    Set-Alias -Name az -Value "C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin\az.cmd"
-    ```
+- Open a new PowerShell console and follow the next steps.
 
 - Create the "Counts" table.
 
