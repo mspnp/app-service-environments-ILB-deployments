@@ -12,11 +12,11 @@ RDP into the jumpbox (you can get the IP using Azure Portal). The user and passw
 
 - Open Power Shell as administrator in order to install azure client and enable script execution.
 
-```powershell
-Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi; Start-Process msiexec.exe -Wait -ArgumentList '/I AzureCLI.msi /quiet'; rm .\AzureCLI.msi
+    ```powershell
+    Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi; Start-Process msiexec.exe -Wait -ArgumentList '/I AzureCLI.msi /quiet'; rm .\AzureCLI.msi
 
-Set-ExecutionPolicy RemoteSigned
-```
+    Set-ExecutionPolicy RemoteSigned
+    ```
 
 - Open a new PowerShell console and run this set of commands in order to be able to run AZ CLI commands in Powershell
 
