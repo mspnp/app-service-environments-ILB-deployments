@@ -8,16 +8,15 @@ RDP into the jumpbox (you can get the IP using AzurePortal). The user and passwo
 
 - Open Power shell, and enable [Windows Linux Subsystem](https://docs.microsoft.com/en-us/windows/wsl/install-win10):
 
-  ```
+  ```powershell
   Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux​1
   ```
 
   You will need to restart the computer. 
 
-- Log in the VM again. Open the Microsoft Store, then search WSL, choose Ubuntu, and install it.
+- Log in the VM again.
 
-- Follow [these instructions](https://docs.microsoft.com/windows/wsl/install-on-server) to install WSL on your jumpbox. Since you are using
-  Windows Server 2019, you will need to skip the Windows Store part and instead download Ubuntu 20.04 directly from [this link](https://docs.microsoft.com/windows/wsl/install-manual#downloading-distributions).
+- Follow [these instructions](https://docs.microsoft.com/windows/wsl/install-on-server) to install WSL on your jumpbox. Since you are using Windows Server 2019, you will need to skip the Windows Store part and instead download Ubuntu 20.04 directly from [this link](https://docs.microsoft.com/windows/wsl/install-manual#downloading-distributions).
 
 - Open WSL Ubuntu. When prompted, enter admin user and password. Then execute this command:
 
