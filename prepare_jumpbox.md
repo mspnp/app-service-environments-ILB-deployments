@@ -8,17 +8,19 @@ RDP into the jumpbox (you can get the IP using AzurePortal). The user and passwo
 
 - Open Power shell, and enable [Windows Linux Subsystem](https://docs.microsoft.com/en-us/windows/wsl/install-win10):
 
-  ```
+  ```powershell
   Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux​1
   ```
 
   You will need to restart the computer. 
 
-- Log in the VM again. Open the Microsoft Store, then search WSL, choose Ubuntu, and install it.
+- Log in the VM again.
+
+- Follow [these instructions](https://docs.microsoft.com/windows/wsl/install-on-server) to install WSL on your jumpbox. Since you are using Windows Server 2019, you will need to skip the Windows Store part and instead download Ubuntu 20.04 directly from [this link](https://docs.microsoft.com/windows/wsl/install-manual#downloading-distributions).
 
 - Open WSL Ubuntu. When prompted, enter admin user and password. Then execute this command:
 
-  ```
+  ```bash
   sudo apt-get update 
   ```
 
@@ -39,7 +41,7 @@ The following software packages are required:
 - npm
 - bower
 - zip
-- .Net Core 3.1
+- .Net 5
 
 Run the following commands to install the above dependencies:
 
@@ -48,15 +50,22 @@ sudo apt-get install nodejs
 sudo apt install npm
 sudo npm install -g bower
 sudo apt install zip
-wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 sudo dpkg -i packages-microsoft-prod.deb
 sudo add-apt-repository universe
 sudo apt-get update
 sudo apt-get install apt-transport-https
 sudo apt-get update
 sudo apt-get install dotnet-sdk-3.1
+sudo apt-get install dotnet-sdk-5.0
 ```
 
 ## Download source code
 
 Clone the code from the git repository.
+
+```bash
+git clone https://github.com/mspnp/app-service-environments-ILB-deployments.git
+```
+
+[Return to README.md](./README.md#publish-aspnet-core-web-api-and-function-applications)

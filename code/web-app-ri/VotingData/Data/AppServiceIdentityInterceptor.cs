@@ -14,7 +14,7 @@ namespace VotingData.Data
 {
     public class AppServiceIdentityInterceptor : DbConnectionInterceptor
     {
-        public override async Task<InterceptionResult> ConnectionOpeningAsync(DbConnection connection, ConnectionEventData eventData, InterceptionResult result, CancellationToken cancellationToken = default)
+        public override async ValueTask<InterceptionResult> ConnectionOpeningAsync(DbConnection connection, ConnectionEventData eventData, InterceptionResult result, CancellationToken cancellationToken = default)
         {
             const string SqlDatabaseResourceUrl = "https://database.windows.net/";
 

@@ -56,7 +56,6 @@
         "name": "Standard"
       }
     },
-
     {
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2019-11-01",
@@ -84,7 +83,6 @@
         ]
       }
     },
-
     {
       "type": "Microsoft.Network/virtualNetworks/subnets",
       "apiVersion": "2019-11-01",
@@ -126,7 +124,6 @@
         ]
       }
     },
-  
     {
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2019-11-01",
@@ -153,7 +150,6 @@
         ]
       }
     },
-      
     {
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2019-07-01",
@@ -174,9 +170,9 @@
             }
           },
           "imageReference": {
-            "publisher": "MicrosoftWindowsDesktop",
-            "offer": "Windows-10",
-            "sku": "rs5-pro",
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2019-Datacenter-smalldisk",
             "version": "latest"
           },
           "dataDisks": [
@@ -201,7 +197,6 @@
         }
       }
     }
-
   ],
   "outputs": {
     "jumpboxName": {
