@@ -68,3 +68,5 @@ RDP into the jumpbox (you can get the IP using Azure Portal). The user and passw
     ```powershell
     sqlcmd -S tcp:$SQL_SERVER.database.windows.net,1433 -d $SQL_DATABASE -N -l 30 -U $USER -G -Q $SQL
     ```
+
+- [Return to README.md](./README.md#set-up-managed-identities-as-users-in-the-sql-database)

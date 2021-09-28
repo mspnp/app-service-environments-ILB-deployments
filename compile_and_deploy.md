@@ -71,3 +71,5 @@ az functionapp deployment source config-zip --name $FUNCTION_NAME2 --resource-gr
 
 az webapp deployment source config-zip --name $WEBAPP_NAME2 --resource-group $RGNAME --src deploy/VotingWeb.zip
 ```
+
+[Return to README.md](./README.md#publish-aspnet-core-web-api-and-function-applications)

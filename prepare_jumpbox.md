@@ -67,3 +67,5 @@ Clone the code from the git repository.
 ```bash
 git clone https://github.com/mspnp/app-service-environments-ILB-deployments.git
 ```
+
+[Return to README.md](./README.md#publish-aspnet-core-web-api-and-function-applications)
