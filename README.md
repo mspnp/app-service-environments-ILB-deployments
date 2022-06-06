@@ -4,9 +4,9 @@ This reference implementation shows how you can improve the resiliency of an ASE
 
 ## Prerequisites
 
-- [azure-cli](https://docs.microsoft.com/bs-cyrl-ba/cli/azure/install-azure-cli?view=azure-cli-latest) 2.2.0 or older.
+- [azure-cli](https://docs.microsoft.com/cli/azure/install-azure-cli?view=azure-cli-latest) 2.37.0 or newer.
 
-* [sqlcmd](https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-setup-tools?view=sql-server-ver15) installed.
+* [sqlcmd](https://docs.microsoft.com/sql/linux/sql-server-linux-setup-tools?view=sql-server-ver15) installed.
 
 * **jq** tool installed for your platform:
   `sudo apt-get install jq`
@@ -28,7 +28,7 @@ export RGNAME=yourResourceGroupName
 export RGLOCATION=yourLocation
 export SQLADMINUSER=yoursqlAdminUser
 export JUMPBOX_USER=yourJumpBoxUser
-export ADMIN_USER_ID=$(az ad signed-in-user show --query objectId -o tsv)
+export ADMIN_USER_ID=$(az ad signed-in-user show --query id -o tsv)
 ```
 
 ## Enter and export the password for the SQL Server administrator
