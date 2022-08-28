@@ -1,0 +1,101 @@
+#requirements
+#az cli
+#jq 
+
+#Parameters
+RGNAME=yourResourceGroupName
+RGLOCATION=yourLocation
+SQLADMINUSER=yoursqlAdminUser
+SQLADMINPASSWORD=yoursqlAdminPassword
+JUMPBOX_USER=yourJumpBoxUser
+JUMPBOX_PASSWORD=yourPassword
+$ADMIN_USER_ID=$(az ad signed-in-user show --query id -o tsv)
+
+# IP Addresses
+NET_PREFIX=10.0.0.0/16
+APPGW_PREFIX=10.0.1.0/24
+REDIS_PREFIX=10.0.2.0/24
+ASE_PREFIX=10.0.100.0/24
+FIREWALL_PREFIX=10.0.200.0/24
+JUMPBOX_PREFIX=10.0.250.0/24
+
+#Suhas params - delete before commits
+RGNAME=asev3-rg
+RGLOCATION=westus3
+SQLADMINUSER=suadmin
+SQLADMINPASSWORD=P@ssword1234
+JUMPBOX_USER=sujumpboxuser
+JUMPBOX_PASSWORD=P@ssword1234
+az account set -n 'suhas-sub'
+
+
+# 1. creates the resource group
+az group create --name "${RGNAME}" --location "${RGLOCATION}"
+
+# 2. deploy global network related resources
+VNET_NAME=$(az network vnet list -g $RGNAME --query "[?contains(addressSpace.addressPrefixes, '${NET_PREFIX}')]" --query [0].name -o tsv)
+az deployment group create --resource-group $RGNAME --template-file templates/network.bicep --parameters existentVnetName=$VNET_NAME vnetAddressPrefix=$NET_PREFIX
+VNET_NAME=$(az deployment group show -g $RGNAME -n network --query properties.outputs.vnetName.value -o tsv)
+VNET_ROUTE_NAME=$(az deployment group show -g $RGNAME -n network --query properties.outputs.vnetRouteName.value -o tsv)
+
+# 3. deploy ASE
+az deployment group create --resource-group $RGNAME --template-file templates/ase.bicep -n ase --parameters vnetName=$VNET_NAME vnetRouteName=$VNET_ROUTE_NAME aseSubnetAddressPrefix=$ASE_PREFIX
+ASE_DNS_SUFFIX=$(az deployment group show -g $RGNAME -n ase --query properties.outputs.dnsSuffix.value -o tsv)
+ASE_SUBNET_NAME=$(az deployment group show -g $RGNAME -n ase --query properties.outputs.aseSubnetName.value -o tsv)
+ASE_NAME=$(az deployment group show -g $RGNAME -n ase --query properties.outputs.aseName.value -o tsv)
+ASE_ID=$(az deployment group show -g $RGNAME -n ase --query properties.outputs.aseId.value -o tsv)
+ASE_ILB_IP_ADDRESS=$(az resource show --resource-group $RGNAME --name $ASE_NAME --resource-type "Microsoft.Web/hostingEnvironments" | jq -r '.properties.networkingConfiguration.internalInboundIpAddresses[]')
+
+# 4. Deploy Firewall
+# Deploy AF
+az deployment group create --resource-group $RGNAME --template-file templates/firewall.bicep --parameters vnetName=$VNET_NAME firewallSubnetPrefix=$FIREWALL_PREFIX
+
+
+# 5. deploy the private DNS zone
+az deployment group create --resource-group $RGNAME --template-file templates/dns.bicep -n dns --parameters vnetName=$VNET_NAME zoneName=$ASE_DNS_SUFFIX ipAddress=$ASE_ILB_IP_ADDRESS
+
+
+# 6. deploy jumpbox
+az deployment group create --resource-group $RGNAME --template-file templates/jumpbox.bicep --parameters vnetName=$VNET_NAME \
+    subnetAddressPrefix=$JUMPBOX_PREFIX adminUsername=$JUMPBOX_USER adminPassword=$JUMPBOX_PASSWORD
+JUMPBOX_PUBLIC_IP=$(az deployment group show -g $RGNAME -n jumpbox --query properties.outputs.jumpboxPublicIpAddress.value -o tsv)
+JUMPBOX_SUBNET_NAME=$(az deployment group show -g $RGNAME -n jumpbox --query properties.outputs.jumpboxSubnetName.value -o tsv)
+
+
+# 7. deploy services: cosmos, sql, servicebus and storage
+ALLOWED_SUBNET_NAMES=${ASE_SUBNET_NAME},${JUMPBOX_SUBNET_NAME}
+az deployment group create --resource-group $RGNAME --template-file templates/services.bicep \
+    --parameters vnetName=$VNET_NAME allowedSubnetNames=$ALLOWED_SUBNET_NAMES \
+                 sqlAdminUserName=$SQLADMINUSER sqlAdminPassword=$SQLADMINPASSWORD sqlAadAdminSid=$ADMIN_USER_ID
+COSMOSDB_NAME=$(az deployment group show -g $RGNAME -n services --query properties.outputs.cosmosDbName.value -o tsv)
+SQL_SERVER=$(az deployment group show -g $RGNAME -n services --query properties.outputs.sqlServerName.value -o tsv)
+SQL_DATABASE=$(az deployment group show -g $RGNAME -n services --query properties.outputs.sqlDatabaseName.value -o tsv)
+KEYVAULT_NAME=$(az deployment group show -g $RGNAME -n services --query properties.outputs.keyVaultName.value -o tsv)
+RESOURCES_STORAGE_ACCOUNT=$(az deployment group show -g $RGNAME -n services --query properties.outputs.resourcesStorageAccountName.value -o tsv)
+RESOURCES_CONTAINER_NAME=$(az deployment group show -g $RGNAME -n services --query properties.outputs.resourcesContainerName.value -o tsv)
+
+# Uploads image to the storage account
+az storage blob upload -c $RESOURCES_CONTAINER_NAME -f Microsoft_Azure_logo_small.png -n Microsoft_Azure_logo_small.png --account-name $RESOURCES_STORAGE_ACCOUNT
+RESOURCE_URL="$(az storage account show -n $RESOURCES_STORAGE_ACCOUNT --query primaryEndpoints.blob -o tsv)$RESOURCES_CONTAINER_NAME/Microsoft_Azure_logo_small.png"
+
+# 8. Create the app service plans and the sites
+az deployment group create --resource-group $RGNAME --template-file templates/sites.bicep -n sites --parameters aseName=$ASE_NAME \
+    vnetName=$VNET_NAME redisSubnetAddressPrefix=$REDIS_PREFIX cosmosDbName=$COSMOSDB_NAME \
+    sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME \
+    aseDnsSuffix=$ASE_DNS_SUFFIX
+INTERNAL_APP1_URL=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingAppUrl.value -o tsv) && \
+INTERNAL_APP2_URL=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.testAppUrl.value -o tsv) && \
+VOTING_WEB_APP_PRINCIPAL_ID=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingWebAppIdentityPrincipalId.value -o tsv) && \
+VOTING_COUNTER_FUNCTION_NAME=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingFunctionName.value -o tsv) && \
+VOTING_COUNTER_FUNCTION_PRINCIPAL_ID=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingCounterFunctionIdentityPrincipalId.value -o tsv) && \
+VOTING_API_NAME=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingApiName.value -o tsv) && \
+VOTING_API_PRINCIPAL_ID=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingApiIdentityPrincipalId.value -o tsv)
+
+# 9. Deploy RBAC for resources after AAD propagation
+until az ad sp show --id ${VOTING_WEB_APP_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id ${VOTING_API_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id ${VOTING_COUNTER_FUNCTION_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+az deployment group create --resource-group $RGNAME --template-file templates/rbac.bicep \
+    --parameters votingWebAppIdentityPrincipalId=$VOTING_WEB_APP_PRINCIPAL_ID votingCounterFunctionIdentityPrincipalId=$VOTING_COUNTER_FUNCTION_PRINCIPAL_ID \
+                 keyVaultName=$KEYVAULT_NAME
+
