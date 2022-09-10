@@ -25,6 +25,9 @@ param sqlServerName string
 @description('The name for the sql database')
 param sqlDatabaseName string
 
+@description('The name for the log analytics workspace')
+param logAnalyticsWorkspace string = '${uniqueString(resourceGroup().id)}la'
+
 @description('The availability zone to deploy. Valid values are: 1, 2 or 3. Use empty to not use zones.')
 param zone string = ''
 
@@ -193,6 +196,12 @@ resource keyVaultName_redisSecretName 'Microsoft.KeyVault/vaults/secrets@2022-07
   }
 }
 
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' = {
+  name: logAnalyticsWorkspace
+  location: location  
+}
+
+
 resource votingFunctionName 'Microsoft.Insights/components@2020-02-02' = {
   name: votingFunctionName_var
   location: location
@@ -201,6 +210,7 @@ resource votingFunctionName 'Microsoft.Insights/components@2020-02-02' = {
     Application_Type: 'web'
     Flow_Type: 'Redfield'
     Request_Source: 'AppServiceEnablementCreate'
+    WorkspaceResourceId: logAnalytics.id
   }
 }
 
@@ -212,6 +222,7 @@ resource votingApiName 'Microsoft.Insights/components@2020-02-02' = {
     Application_Type: 'web'
     Flow_Type: 'Redfield'
     HockeyAppId: ''
+    WorkspaceResourceId: logAnalytics.id
   }
 }
 
@@ -223,6 +234,7 @@ resource votingWebName 'Microsoft.Insights/components@2020-02-02' = {
     Application_Type: 'web'
     Flow_Type: 'Redfield'
     HockeyAppId: ''
+    WorkspaceResourceId: logAnalytics.id
   }
 }
 
@@ -234,6 +246,7 @@ resource testWebName 'Microsoft.Insights/components@2020-02-02' = {
     Application_Type: 'web'
     Flow_Type: 'Redfield'
     HockeyAppId: ''
+    WorkspaceResourceId: logAnalytics.id
   }
 }
 

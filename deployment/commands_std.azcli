@@ -2,6 +2,10 @@
 #az cli
 #jq 
 
+# App url
+APPGW_APP1_URL=votingapp-std.contoso.com
+APPGW_APP2_URL=testapp-std.contoso.com
+
 #Parameters
 RGNAME=yourResourceGroupName
 RGLOCATION=yourLocation
@@ -9,7 +13,7 @@ SQLADMINUSER=yoursqlAdminUser
 SQLADMINPASSWORD=yoursqlAdminPassword
 JUMPBOX_USER=yourJumpBoxUser
 JUMPBOX_PASSWORD=yourPassword
-$ADMIN_USER_ID=$(az ad signed-in-user show --query id -o tsv)
+ADMIN_USER_ID=$(az ad signed-in-user show --query id -o tsv)
 
 # IP Addresses
 NET_PREFIX=10.0.0.0/16
@@ -74,9 +78,10 @@ KEYVAULT_NAME=$(az deployment group show -g $RGNAME -n services --query properti
 RESOURCES_STORAGE_ACCOUNT=$(az deployment group show -g $RGNAME -n services --query properties.outputs.resourcesStorageAccountName.value -o tsv)
 RESOURCES_CONTAINER_NAME=$(az deployment group show -g $RGNAME -n services --query properties.outputs.resourcesContainerName.value -o tsv)
 
+
 # Uploads image to the storage account
 az storage blob upload -c $RESOURCES_CONTAINER_NAME -f Microsoft_Azure_logo_small.png -n Microsoft_Azure_logo_small.png --account-name $RESOURCES_STORAGE_ACCOUNT
-RESOURCE_URL="$(az storage account show -n $RESOURCES_STORAGE_ACCOUNT --query primaryEndpoints.blob -o tsv)$RESOURCES_CONTAINER_NAME/Microsoft_Azure_logo_small.png"
+RESOURCE_URL="$(az storage account show -g $RGNAME -n $RESOURCES_STORAGE_ACCOUNT --query primaryEndpoints.blob -o tsv)$RESOURCES_CONTAINER_NAME/Microsoft_Azure_logo_small.png"
 
 # 8. Create the app service plans and the sites
 az deployment group create --resource-group $RGNAME --template-file templates/sites.bicep -n sites --parameters aseName=$ASE_NAME \
@@ -90,6 +95,34 @@ VOTING_COUNTER_FUNCTION_NAME=$(az deployment group show -g $RGNAME -n sites --qu
 VOTING_COUNTER_FUNCTION_PRINCIPAL_ID=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingCounterFunctionIdentityPrincipalId.value -o tsv) && \
 VOTING_API_NAME=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingApiName.value -o tsv) && \
 VOTING_API_PRINCIPAL_ID=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingApiIdentityPrincipalId.value -o tsv)
+
+
+
+#Suhas Test
+echo $VNET_NAME
+echo $VNET_ROUTE_NAME
+echo $ASE_DNS_SUFFIX
+echo $ASE_SUBNET_NAME
+echo $ASE_NAME
+echo $ASE_ID
+echo $ASE_ILB_IP_ADDRESS
+echo $JUMPBOX_PUBLIC_IP
+echo $JUMPBOX_SUBNET_NAME
+echo $COSMOSDB_NAME
+echo $SQL_SERVER
+echo $SQL_DATABASE
+echo $KEYVAULT_NAME
+echo $RESOURCES_STORAGE_ACCOUNT
+echo $RESOURCES_CONTAINER_NAME
+echo $RESOURCE_URL
+echo $INTERNAL_APP1_URL
+echo $INTERNAL_APP2_URL
+echo $VOTING_WEB_APP_PRINCIPAL_ID
+echo $VOTING_COUNTER_FUNCTION_NAME
+echo $VOTING_COUNTER_FUNCTION_PRINCIPAL_ID
+echo $VOTING_API_NAME
+echo $VOTING_API_PRINCIPAL_ID
+
 
 # 9. Deploy RBAC for resources after AAD propagation
 until az ad sp show --id ${VOTING_WEB_APP_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done

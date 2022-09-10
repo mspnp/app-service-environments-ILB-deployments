@@ -32,7 +32,7 @@ var serviceBusName_var = 'votingservicebus${uniqueString(resourceGroup().id)}'
 var serviceBusQueue = 'votingqueue'
 var resourcesStorageAccountName_var = toLower('resources${uniqueString(resourceGroup().id)}')
 var resourcesContainerName = 'rscontainer'
-var keyVaultName_var = 'keyvault-${uniqueString(resourceGroup().id)}'
+var keyVaultName_var = 'akv-${uniqueString(resourceGroup().id)}'
 var allowedSubnetNamesArray = split(allowedSubnetNames, ',')
  
 resource cosmosName 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
@@ -135,6 +135,8 @@ resource sqlServerName_sqlDatabaseName 'Microsoft.Sql/servers/databases@2022-02-
   }
 }
 
+/*
+
 resource sqlServerName_activeDirectory 'Microsoft.Sql/servers/administrators@2022-02-01-preview' = {
   parent: sqlServerName
   name: 'activeDirectory'
@@ -147,7 +149,7 @@ resource sqlServerName_activeDirectory 'Microsoft.Sql/servers/administrators@202
   }
 }
 
-/* resource sqlServerName_allow_subnet_sql 'Microsoft.Sql/servers/virtualNetworkRules@2022-02-01-preview' = [for (item, i) in allowedSubnetNamesArray: {
+ resource sqlServerName_allow_subnet_sql 'Microsoft.Sql/servers/virtualNetworkRules@2022-02-01-preview' = [for (item, i) in allowedSubnetNamesArray: {
   name: '${sqlServerName_var}/allow-subnet-sql-${i}'
   //location: location
   properties: {
@@ -275,6 +277,7 @@ resource resourcesStorageAccountName 'Microsoft.Storage/storageAccounts@2021-09-
   }
 }
 
+/*
 resource resourcesStorageAccountName_default_resourcesContainerName 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-09-01' = {
   name: '${resourcesStorageAccountName_var}/default/${resourcesContainerName}'
   properties: {
@@ -283,7 +286,7 @@ resource resourcesStorageAccountName_default_resourcesContainerName 'Microsoft.S
   dependsOn: [
     resourcesStorageAccountName
   ]
-}
+}*/
 
 output cosmosDbName string = cosmosName_var
 output sqlServerName string = sqlServerName_var
