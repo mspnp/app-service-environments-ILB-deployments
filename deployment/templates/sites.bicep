@@ -50,7 +50,7 @@ var testWebPlanName_var = '${testWebName_var}-plan'
 var votingFunctionPlanName_var = '${votingFunctionName_var}-plan'
 var aseId = resourceId('Microsoft.Web/hostingEnvironments', aseName)
 
-resource redisNSGName 'Microsoft.Network/networkSecurityGroups@2022-01-01' = {
+resource redisNSGName 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
   name: redisNSGName_var
   location: location
   tags: {
@@ -160,7 +160,7 @@ resource redisNSGName 'Microsoft.Network/networkSecurityGroups@2022-01-01' = {
   }
 }
 
-resource vnetName_redisSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' = {
+resource vnetName_redisSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
   name: '${vnetName}/${redisSubnetName}'
   //location: location
   properties: {
@@ -171,7 +171,7 @@ resource vnetName_redisSubnetName 'Microsoft.Network/virtualNetworks/subnets@202
   }
 }
 
-resource redisName 'Microsoft.Cache/Redis@2019-07-01' = {
+resource redisName 'Microsoft.Cache/Redis@2022-06-01' = {
   name: redisName_var
   location: location
   zones: (empty(zone) ? json('null') : array(zone))
@@ -182,9 +182,6 @@ resource redisName 'Microsoft.Cache/Redis@2019-07-01' = {
       capacity: 3
     }
     enableNonSslPort: false
-    redisConfiguration: {
-      maxclients: '5000'
-    }
     subnetId: redisSubnetId
   }
 }
@@ -196,7 +193,7 @@ resource keyVaultName_redisSecretName 'Microsoft.KeyVault/vaults/secrets@2022-07
   }
 }
 
-resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' = {
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: logAnalyticsWorkspace
   location: location  
 }
@@ -413,7 +410,7 @@ resource Microsoft_Web_sites_votingApiName 'Microsoft.Web/sites@2022-03-01' = {
   }
 }
 
-resource Microsoft_Web_sites_votingWebName 'Microsoft.Web/sites@2018-11-01' = {
+resource Microsoft_Web_sites_votingWebName 'Microsoft.Web/sites@2022-03-01' = {
   name: votingWebName_var
   location: location
   kind: 'app'
@@ -504,6 +501,6 @@ output votingAppUrl string = '${votingWebName_var}.${aseDnsSuffix}'
 output testAppUrl string = '${testWebName_var}.${aseDnsSuffix}'
 output votingApiName string = votingApiName_var
 output votingFunctionName string = votingFunctionName_var
-output votingWebAppIdentityPrincipalId string = reference('Microsoft.Web/sites/${votingWebName_var}', '2018-11-01', 'Full').identity.principalId
-output votingApiIdentityPrincipalId string = reference('Microsoft.Web/sites/${votingApiName_var}', '2018-11-01', 'Full').identity.principalId
-output votingCounterFunctionIdentityPrincipalId string = reference('Microsoft.Web/sites/${votingFunctionName_var}', '2018-11-01', 'Full').identity.principalId
+output votingWebAppIdentityPrincipalId string = reference('Microsoft.Web/sites/${votingWebName_var}', '2022-03-01', 'Full').identity.principalId
+output votingApiIdentityPrincipalId string = reference('Microsoft.Web/sites/${votingApiName_var}', '2022-03-01', 'Full').identity.principalId
+output votingCounterFunctionIdentityPrincipalId string = reference('Microsoft.Web/sites/${votingFunctionName_var}', '2022-03-01', 'Full').identity.principalId
