@@ -22,7 +22,7 @@ var jumpboxPublicIpName_var = 'jumpbox-pip-${uniqueString(resourceGroup().id)}'
 var jumpboxNSGName_var = '${vnetName}-JUMPBOX-NSG'
 var jumpboxNicName_var = 'jumpbox-nic-${uniqueString(resourceGroup().id)}'
 
-resource jumpboxPublicIpName 'Microsoft.Network/publicIPAddresses@2022-01-01' = {
+resource jumpboxPublicIpName 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
   name: jumpboxPublicIpName_var
   location: location
   properties: {
@@ -33,7 +33,7 @@ resource jumpboxPublicIpName 'Microsoft.Network/publicIPAddresses@2022-01-01' = 
   }
 }
 
-resource jumpboxNSGName 'Microsoft.Network/networkSecurityGroups@2022-01-01' = {
+resource jumpboxNSGName 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
   name: jumpboxNSGName_var
   location: location
   tags: {
@@ -59,8 +59,8 @@ resource jumpboxNSGName 'Microsoft.Network/networkSecurityGroups@2022-01-01' = {
   }
 }
 
-resource vnetName_jumpboxSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' = {
-  name: '${vnetName}/${jumpboxSubnetName}'  
+resource vnetName_jumpboxSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
+  name: '${vnetName}/${jumpboxSubnetName}'
   properties: {
     addressPrefix: subnetAddressPrefix
     networkSecurityGroup: {
@@ -69,7 +69,7 @@ resource vnetName_jumpboxSubnetName 'Microsoft.Network/virtualNetworks/subnets@2
   }
 }
 
-resource jumpboxNicName 'Microsoft.Network/networkInterfaces@2022-01-01' = {
+resource jumpboxNicName 'Microsoft.Network/networkInterfaces@2022-07-01' = {
   name: jumpboxNicName_var
   location: location
   properties: {
@@ -90,7 +90,7 @@ resource jumpboxNicName 'Microsoft.Network/networkInterfaces@2022-01-01' = {
   }
 }
 
-resource jumpboxName 'Microsoft.Compute/virtualMachines@2019-07-01' = {
+resource jumpboxName 'Microsoft.Compute/virtualMachines@2022-08-01' = {
   name: jumpboxName_var
   location: location
   properties: {

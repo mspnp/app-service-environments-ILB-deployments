@@ -25,7 +25,7 @@ var firewallName_var = 'firewall-${uniqueString(resourceGroup().id)}'
 
 */
 
-resource vnetName_firewallSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' = {
+resource vnetName_firewallSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
   name: '${vnetName}/${firewallSubnetName}'
   properties: {
     addressPrefix: firewallSubnetPrefix
@@ -58,7 +58,7 @@ resource vnetName_firewallSubnetName 'Microsoft.Network/virtualNetworks/subnets@
   }
 }
 
-resource firewallPublicIpName 'Microsoft.Network/publicIPAddresses@2022-01-01' = {
+resource firewallPublicIpName 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
   location: location
   name: firewallPublicIpName_var
   sku: {
@@ -71,7 +71,7 @@ resource firewallPublicIpName 'Microsoft.Network/publicIPAddresses@2022-01-01' =
   }
 }
 
-resource firewallName 'Microsoft.Network/azureFirewalls@2022-01-01' = {
+resource firewallName 'Microsoft.Network/azureFirewalls@2022-07-01' = {
   name: firewallName_var
   location: location
   properties: {
