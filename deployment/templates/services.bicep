@@ -32,7 +32,7 @@ var serviceBusName_var = 'votingservicebus${uniqueString(resourceGroup().id)}'
 var serviceBusQueue = 'votingqueue'
 var resourcesStorageAccountName_var = toLower('resources${uniqueString(resourceGroup().id)}')
 var resourcesContainerName = 'rscontainer'
-var keyVaultName_var = 'akv-${uniqueString(resourceGroup().id)}'
+var keyVaultName_var = 'akvault-${uniqueString(resourceGroup().id)}'
 var allowedSubnetNamesArray = split(allowedSubnetNames, ',')
  
 resource cosmosName 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {

@@ -24,7 +24,7 @@ var aseSubnetId = vnetName_aseSubnetName.id
 var aseLoadBalancingMode = 'Web, Publishing'
 
 resource vnetName_aseSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' = {
-  name: '${vnetName}/${aseSubnetName}'  
+  name: '${vnetName}/${aseSubnetName}-1'  
   properties: {
     addressPrefix: aseSubnetAddressPrefix    
     delegations: [
