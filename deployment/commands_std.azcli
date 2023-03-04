@@ -16,7 +16,7 @@ JUMPBOX_PASSWORD=yourPassword
 PFX_PASSWORD=yourPassword
 ADMIN_USER_ID=$(az ad signed-in-user show --query id -o tsv)
 
-# IP Addresses
+#IP Addresses
 NET_PREFIX=10.0.0.0/16
 APPGW_PREFIX=10.0.1.0/24
 REDIS_PREFIX=10.0.2.0/24
