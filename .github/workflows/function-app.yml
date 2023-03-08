@@ -1,8 +1,5 @@
 name: Build and Deploy Vote Counter App
 
-env:
-  deploymentMethod: runFromPackage
-
 on:
   push:
     branches:
@@ -24,13 +21,13 @@ jobs:
           dotnet-version: 3.1.x
 
       - name: Restore NuGet Packages
-        run: dotnet restore ${{ env.appPath }}
+        run: dotnet restore ${{ vars.appPath }}
 
       - name: Build
-        run: dotnet build ${{ env.appPath }} --configuration ${{ env.buildConfiguration }} --no-restore
+        run: dotnet build ${{ vars.appPath }} --configuration ${{ vars.buildConfiguration }} --no-restore
 
       - name: Publish
-        run: dotnet publish ${{ env.appPath }} --configuration ${{ env.buildConfiguration }} --output '$(github.workspace)' --no-restore
+        run: dotnet publish ${{ vars.appPath }} --configuration ${{ vars.buildConfiguration }} --output '$(github.workspace)' --no-restore
 
       - name: Archive Files
         uses: actions/upload-artifact@v2
@@ -54,7 +51,7 @@ jobs:
 #   deploy-zone3:
 #     needs: build
 #     runs-on: ubuntu-latest
-#     environment: ${{ env.appEnvironmentName }}
+#     environment: ${{ vars.appEnvironmentName }}
 #     steps:
 #       - name: Deploy to Zone 3
 #         uses: azure/webapps-deploy@v2
