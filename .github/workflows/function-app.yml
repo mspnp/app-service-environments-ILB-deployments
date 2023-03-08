@@ -24,13 +24,13 @@ jobs:
           dotnet-version: 3.1.x
 
       - name: Restore NuGet Packages
-        run: dotnet restore ${{ env.appPath }}/VoteCounter.csproj
+        run: dotnet restore ${{ env.appPath }}
 
       - name: Build
-        run: dotnet build ${{ env.appPath }}/VoteCounter.csproj --configuration ${{ env.buildConfiguration }} --no-restore
+        run: dotnet build ${{ env.appPath }} --configuration ${{ env.buildConfiguration }} --no-restore
 
       - name: Publish
-        run: dotnet publish ${{ env.appPath }}/VoteCounter.csproj --configuration ${{ env.buildConfiguration }} --output '$(github.workspace)' --no-restore
+        run: dotnet publish ${{ env.appPath }} --configuration ${{ env.buildConfiguration }} --output '$(github.workspace)' --no-restore
 
       - name: Archive Files
         uses: actions/upload-artifact@v2
