@@ -21,13 +21,13 @@ jobs:
           dotnet-version: 3.1.x
 
       - name: Restore NuGet Packages
-        run: dotnet restore ${{ vars.appPath }}
+        run: dotnet restore ${{ vars.APPPATH }}
 
       - name: Build
-        run: dotnet build ${{ vars.appPath }} --configuration ${{ vars.buildConfiguration }} --no-restore
+        run: dotnet build ${{ vars.APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --no-restore
 
       - name: Publish
-        run: dotnet publish ${{ vars.appPath }} --configuration ${{ vars.buildConfiguration }} --output '$(github.workspace)' --no-restore
+        run: dotnet publish ${{ vars.APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --output '$(github.workspace)' --no-restore
 
       - name: Archive Files
         uses: actions/upload-artifact@v2
