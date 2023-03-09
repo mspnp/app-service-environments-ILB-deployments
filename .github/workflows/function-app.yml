@@ -33,7 +33,10 @@ jobs:
 
       - name: Publish
         run: dotnet publish ${{ vars.APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --output  ${{ github.workspace }} --no-restore
-
+      
+      - name: Tree
+        run: tree
+      
       - name: Archive Files
         uses: actions/upload-artifact@v2
         with:
