@@ -35,7 +35,7 @@ jobs:
         run: dotnet publish ${{ vars.APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --output  ${{ github.workspace }} --no-restore
       
       - name: Tree
-        run: dir ${{ github.workspace }}/VoteCounter/
+        run: dir ${{ github.workspace }} /s /b /o:gn
       
       - name: Archive Files
         uses: actions/upload-artifact@v2
