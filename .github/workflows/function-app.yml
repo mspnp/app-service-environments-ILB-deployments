@@ -48,7 +48,6 @@ jobs:
       - uses: actions/download-artifact@master
         with:
           name: drop
-          path: ${{ github.workspace }}/votecounter-${{ github.run_id }}.zip
       
       - name: Deploy to Zone 1
         uses: azure/webapps-deploy@v2
