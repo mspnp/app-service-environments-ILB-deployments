@@ -32,7 +32,7 @@ jobs:
         run: dotnet build ${{ vars.APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --no-restore
 
       - name: Publish
-        run: dotnet publish ${{ vars.APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --output '$(github.workspace)' --no-restore
+        run: dotnet publish ${{ vars.APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --output  ${{ github.workspace }} --no-restore
 
       - name: Archive Files
         uses: actions/upload-artifact@v2
@@ -48,12 +48,13 @@ jobs:
       - uses: actions/download-artifact@master
         with:
           name: drop
+          path: ${{ github.workspace }}/votecounter-${{ github.run_id }}.zip
       
       - name: Deploy to Zone 1
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'app-service-app-1'
-          package: ${{ github.workspace }}/drop/votecounter-${{ github.run_id }}.zip
+          package: ${{ github.workspace }}/votecounter-${{ github.run_id }}.zip
           slot-name: production
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
 
