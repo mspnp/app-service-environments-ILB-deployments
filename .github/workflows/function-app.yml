@@ -35,7 +35,7 @@ jobs:
         run: dotnet publish ${{ vars.APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --output  ${{ github.workspace }} --no-restore
       
       - name: Tree
-        run: dir ${{ github.workspace }} /s /b /o:gn
+        run: dir ${{ github.workspace }} -r | % { if ($_.PsIsContainer) { $_.FullName + "\" } else { $_.FullName } }
       
       - name: Archive Files
         uses: actions/upload-artifact@v2
