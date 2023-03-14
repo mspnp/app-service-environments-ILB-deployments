@@ -32,16 +32,14 @@ jobs:
         run: dotnet build ${{ vars.APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --no-restore
 
       - name: Publish
-        run: dotnet publish ${{ vars.APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --output  ${{ github.workspace }} --no-restore
-      
-      - name: Tree
-        run: dir ${{ github.workspace }} -r | % { if ($_.PsIsContainer) { $_.FullName + "\" } else { $_.FullName } }
+        run: dotnet publish ${{ vars.APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --output  ${{ github.workspace }}/VoteCounter --no-restore
+    
       
       - name: Archive Files
         uses: actions/upload-artifact@v2
         with:
           name: drop
-          path: ${{ github.workspace }}/VoteCounter/votecounter-${{ github.run_id }}.zip
+          path: ${{ github.workspace }}/VoteCounter
 
   deploy-zone1:
     needs: build
@@ -51,13 +49,13 @@ jobs:
       - uses: actions/download-artifact@master
         with:
           name: drop
-          path: ${{ github.workspace }}/VoteCounter/votecounter-${{ github.run_id }}.zip
+          path: ${{ github.workspace }}/VoteCounter
       
       - name: Deploy to Zone 1
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'app-service-app-1'
-          package: ${{ github.workspace }}/VoteCounter/votecounter-${{ github.run_id }}.zip
+          package: ${{ github.workspace }}/VoteCounter
           slot-name: production
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
 
