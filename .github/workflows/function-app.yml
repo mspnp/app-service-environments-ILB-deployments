@@ -21,7 +21,7 @@ jobs:
       - name: Setup .NET Core 5
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 5.x
+          dotnet-version: 7.0.x
 
       - name: Restore NuGet Packages
         run: dotnet restore ${{ vars.APPPATH }}
@@ -41,7 +41,7 @@ jobs:
 
   deploy-zone1:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     environment: 'production'
     steps:
       - uses: actions/download-artifact@master
@@ -52,20 +52,24 @@ jobs:
       - name: Deploy to Zone 1
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'ase-update-1'
+          app-name: ${{ vars.FUNCTION_APP_ZONE_1 }}
           package: ${{ github.workspace }}/VoteCounter
           slot-name: production
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-
-#   deploy-zone3:
-#     needs: build
-#     runs-on: ubuntu-latest
-#     environment: ${{ vars.appEnvironmentName }}
-#     steps:
-#       - name: Deploy to Zone 3
-#         uses: azure/webapps-deploy@v2
-#         with:
-#           app-name: ${{ secrets.functionAppNameZone3 }}
-#           package: ${{ github.workspace }}/drop/votecounter-${{ github.run_id }}.zip
-#           slot-name: production
-#           publish-profile: ${{ secrets.azureFunctionAppPublishProfile }}
+  deploy-zone3:
+    needs: build
+    runs-on: windows-latest
+    environment: 'production'
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: drop
+          path: ${{ github.workspace }}/VoteCounter
+      
+      - name: Deploy to Zone 3
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ vars.FUNCTION_APP_ZONE_3 }}
+          package: ${{ github.workspace }}/VoteCounter
+          slot-name: production
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
