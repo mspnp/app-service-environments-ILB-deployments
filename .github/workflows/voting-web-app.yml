@@ -30,7 +30,7 @@ jobs:
         run: dotnet build ${{ vars.VOTINGWEB_APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --no-restore
 
       - name: Publish
-        run: dotnet publish ${{ vars.VOTINGWEB_APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --output  ${{ github.workspace }}/VoteCounter --no-restore
+        run: dotnet publish ${{ vars.VOTINGWEB_APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --output  ${{ github.workspace }}/VoteWeb --no-restore
     
       
       - name: Archive Files
