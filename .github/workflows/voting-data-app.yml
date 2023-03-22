@@ -1,4 +1,4 @@
-name: Build and Deploy Vote Counter App
+name: Build and Deploy VotingData App
 
 on:
   push:
