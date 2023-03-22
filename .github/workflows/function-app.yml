@@ -54,7 +54,7 @@ jobs:
           name: drop
           path: ${{ github.workspace }}/VoteCounter
       
-      - name: Deploy to Zone 1
+      - name: Deploy
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ vars.FUNCTION_APP_NAME }}
