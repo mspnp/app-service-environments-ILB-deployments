@@ -25,13 +25,13 @@ jobs:
           dotnet-version: 7.0.x
 
       - name: Restore NuGet Packages
-        run: dotnet restore ${{ vars.APPPATH }}
+        run: dotnet restore ${{ vars.FUNCTION_APPPATH }}
 
       - name: Build
-        run: dotnet build ${{ vars.APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --no-restore
+        run: dotnet build ${{ vars.FUNCTION_APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --no-restore
 
       - name: Publish
-        run: dotnet publish ${{ vars.APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --output  ${{ github.workspace }}/VoteCounter --no-restore
+        run: dotnet publish ${{ vars.FUNCTION_APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --output  ${{ github.workspace }}/VoteCounter --no-restore
     
       
       - name: Archive Files
