@@ -24,20 +24,20 @@ jobs:
           dotnet-version: 7.0.x
 
       - name: Restore NuGet Packages
-        run: dotnet restore ${{ vars.APPPATH }}
+        run: dotnet restore ${{ vars.VOTINGDATA_APPPATH }}
 
       - name: Build
-        run: dotnet build ${{ vars.APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --no-restore
+        run: dotnet build ${{ vars.VOTINGDATA_APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --no-restore
 
       - name: Publish
-        run: dotnet publish ${{ vars.APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --output  ${{ github.workspace }}/VoteCounter --no-restore
+        run: dotnet publish ${{ vars.VOTINGDATA_APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --output  ${{ github.workspace }}/VotingData --no-restore
     
       
       - name: Archive Files
         uses: actions/upload-artifact@v2
         with:
           name: drop
-          path: ${{ github.workspace }}/VoteCounter
+          path: ${{ github.workspace }}/VotingData
 
   deploy:
     needs: build
@@ -51,11 +51,11 @@ jobs:
       - uses: actions/download-artifact@master
         with:
           name: drop
-          path: ${{ github.workspace }}/VoteCounter
+          path: ${{ github.workspace }}/VotingData
       
       - name: Deploy to Zone 1
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ vars.WEB_APP_NAME }}
-          package: ${{ github.workspace }}/VoteCounter
+          app-name: ${{ vars.VOTINGDATA_WEB_APP_NAME }}
+          package: ${{ github.workspace }}/VotingData
           slot-name: production
