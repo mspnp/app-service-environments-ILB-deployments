@@ -5,7 +5,7 @@ on:
     branches:
       - master
     paths:
-      - 'code/function-app-ri/**'
+      - 'code/web-app-ri/VotingWeb/**'
 
 jobs:
   build:
