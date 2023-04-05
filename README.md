@@ -5,6 +5,9 @@ This reference implementation shows how you can improve the resiliency of an ASE
 ## TODO
 
 [] Make sure you delete secrets
+[] Try the github self hosted runner from jumpbox
+[] Key vault errors
+[] Service endpoints to private endpoints
 
 ## Prerequisites
 

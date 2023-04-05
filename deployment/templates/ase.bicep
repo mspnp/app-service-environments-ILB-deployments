@@ -24,9 +24,9 @@ var aseSubnetId = vnetName_aseSubnetName.id
 var aseLoadBalancingMode = 'Web, Publishing'
 
 resource vnetName_aseSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' = {
-  name: '${vnetName}/${aseSubnetName}-1'  
+  name: '${vnetName}/${aseSubnetName}'  
   properties: {
-    addressPrefix: aseSubnetAddressPrefix    
+    addressPrefix: aseSubnetAddressPrefix
     delegations: [
       {
         name: 'Microsoft.Web.hostingEnvironments'
@@ -44,13 +44,13 @@ resource vnetName_aseSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-
 resource aseName 'Microsoft.Web/hostingEnvironments@2022-03-01' = {
   name: aseName_var
   location: location
-  kind: 'ASEV3'  
+  kind: 'ASEV3'
   properties: {
     dedicatedHostCount: dedicatedHostCount
     zoneRedundant: zoneRedundant
     internalLoadBalancingMode: aseLoadBalancingMode
     virtualNetwork: {
-      id: aseSubnetId
+      id: aseSubnetId 
     }
   }
 }

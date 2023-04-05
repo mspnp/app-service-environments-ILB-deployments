@@ -32,7 +32,7 @@ var serviceBusName_var = 'votingservicebus${uniqueString(resourceGroup().id)}'
 var serviceBusQueue = 'votingqueue'
 var resourcesStorageAccountName_var = toLower('resources${uniqueString(resourceGroup().id)}')
 var resourcesContainerName = 'rscontainer'
-var keyVaultName_var = 'akvault-${uniqueString(resourceGroup().id)}'
+var keyVaultName_var = 'akeyvault-${uniqueString(resourceGroup().id)}'
 var allowedSubnetNamesArray = split(allowedSubnetNames, ',')
  
 resource cosmosName 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
@@ -135,7 +135,6 @@ resource sqlServerName_sqlDatabaseName 'Microsoft.Sql/servers/databases@2022-02-
   }
 }
 
-/*
 
 resource sqlServerName_activeDirectory 'Microsoft.Sql/servers/administrators@2022-02-01-preview' = {
   parent: sqlServerName
@@ -149,16 +148,7 @@ resource sqlServerName_activeDirectory 'Microsoft.Sql/servers/administrators@202
   }
 }
 
- resource sqlServerName_allow_subnet_sql 'Microsoft.Sql/servers/virtualNetworkRules@2022-02-01-preview' = [for (item, i) in allowedSubnetNamesArray: {
-  name: '${sqlServerName_var}/allow-subnet-sql-${i}'
-  //location: location
-  properties: {
-    virtualNetworkSubnetId: resourceId('Microsoft.Network/virtualNetworks/subnets', vnetName, item)
-  }
-  dependsOn: [
-    sqlServerName
-  ]
-}] */
+
 
 resource keyVaultName 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: keyVaultName_var
@@ -252,17 +242,6 @@ resource serviceBusName_serviceBusQueue 'Microsoft.ServiceBus/namespaces/queues@
     enableExpress: false
   }
 }
-/* 
-resource serviceBusName_allow_subnet_sb 'Microsoft.ServiceBus/namespaces/virtualnetworkrules@2018-01-01-preview' = [for (item, i) in allowedSubnetNamesArray: {
-  name: '${serviceBusName_var}/allow-subnet-sb-${i}'
-  //location: location
-  properties: {
-    virtualNetworkSubnetId: resourceId('Microsoft.Network/virtualNetworks/subnets', vnetName, item)
-  }
-  dependsOn: [
-    serviceBusName
-  ]
-}] */
 
 resource resourcesStorageAccountName 'Microsoft.Storage/storageAccounts@2021-09-01' = {
   name: resourcesStorageAccountName_var
@@ -273,11 +252,12 @@ resource resourcesStorageAccountName 'Microsoft.Storage/storageAccounts@2021-09-
     //tier: 'Standard'
   }
   properties: {
+    allowBlobPublicAccess: true
     accessTier: 'Hot'
   }
 }
 
-/*
+
 resource resourcesStorageAccountName_default_resourcesContainerName 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-09-01' = {
   name: '${resourcesStorageAccountName_var}/default/${resourcesContainerName}'
   properties: {
@@ -286,7 +266,7 @@ resource resourcesStorageAccountName_default_resourcesContainerName 'Microsoft.S
   dependsOn: [
     resourcesStorageAccountName
   ]
-}*/
+}
 
 output cosmosDbName string = cosmosName_var
 output sqlServerName string = sqlServerName_var
