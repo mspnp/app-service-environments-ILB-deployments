@@ -186,8 +186,15 @@ resource redisName 'Microsoft.Cache/Redis@2022-06-01' = {
   }
 }
 
+
+resource keyvault_parent 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
+  name: keyVaultName
+}
+
+
 resource keyVaultName_redisSecretName 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  name: '${keyVaultName}/${redisSecretName}'
+  parent: keyvault_parent
+  name: redisSecretName
   properties: {
     value: '${redisName_var}.redis.cache.windows.net:6380,abortConnect=false,ssl=true,password=${listKeys(redisName.id, '2015-08-01').primaryKey}'
   }
