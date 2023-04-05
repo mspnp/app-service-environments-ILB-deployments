@@ -274,3 +274,4 @@ output sqlDatabaseName string = sqlDatabaseName
 output resourcesStorageAccountName string = resourcesStorageAccountName_var
 output resourcesContainerName string = resourcesContainerName
 output keyVaultName string = keyVaultName_var
+output serviceBusName string = serviceBusName_var
