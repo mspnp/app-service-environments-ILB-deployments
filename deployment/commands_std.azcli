@@ -194,9 +194,7 @@ APPGW_PUBLIC_IP=$(az deployment group show -g $RGNAME -n appgw --query propertie
 rm appgwApps.parameters.json
 
 #11. Deploy private endpoints
-az deployment group create --resource-group $RGNAME --template-file templates/privateEndpoints.bicep --parameters vnetName=$VNET_NAME \
-    servicebusNamespaceName=$SERVICEBUS_NAMESPACE_NAME keyVaultName=$KEYVAULT_NAME \
-    cosmosDbName=$COSMOSDB_NAME sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE 
+az deployment group create --resource-group $RGNAME --template-file templates/privateEndpoints.bicep --parameters SubId=$SUBID
 
 
 #11. Obtain AZURE_CREDENTIALS for Github Runner - Copy the output of the following command and paste it in the Github Runner App Secret
