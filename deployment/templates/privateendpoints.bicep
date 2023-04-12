@@ -1,6 +1,5 @@
 //param privateEndpoints_votingsbpe_name string = 'votingsbpe'
 
-
 @description('The location in which the resources should be deployed.')
 param location string = resourceGroup().location
 
@@ -31,7 +30,12 @@ param existingCosmosDBNameExternalId string = '/subscriptions/${SubId}/resourceG
 param existingAKeyVaultNameExternalId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.KeyVault/vaults/${existingAKeyVaultName}'
 
 var vnetId = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.Network/virtualNetworks/${vnetName}'
-var privateEndpointName = 'votingprivateendpoint${uniqueString(resourceGroup().id)}'
+var subnetId = '${vnetId}/subnets/${existingSubnetName}'
+
+var privateEndpointServiceBusName = 'votingprivateendpoint${uniqueString(resourceGroup().id)}'
+var privateEndpointSQLServerName = 'votingprivateendpoint${uniqueString(resourceGroup().id)}'
+var privateEndpointCosmosDbName = 'votingprivateendpoint${uniqueString(resourceGroup().id)}'
+var privateEndpointKeyVaultName = 'votingprivateendpoint${uniqueString(resourceGroup().id)}'
 
 var serviceBusFQDN = '${existingServiceBusName}.servicebus.windows.net'
 var serviceBusPrivateEndpointName = 'votingservicebus${uniqueString(resourceGroup().id)}'
@@ -45,15 +49,13 @@ var cosmosDBPrivateEndpointName = 'votingcosmosdb${uniqueString(resourceGroup().
 var aKeyVaultFQDN = '${existingAKeyVaultName}.vault.azure.net'
 var aKeyVaultPrivateEndpointName = 'votingakeyvault${uniqueString(resourceGroup().id)}'
 
-
-resource privateEndpoints_votingsbpe_name_resource 'Microsoft.Network/privateEndpoints@2022-09-01' = {
-  name: privateEndpointName
+resource privateEndpoint_ServiceBus 'Microsoft.Network/privateEndpoints@2022-09-01' = {
+  name: privateEndpointServiceBusName
   location: location
   properties: {
     privateLinkServiceConnections: [
       {
         name: serviceBusPrivateEndpointName
-        //id: '${privateEndpoints_votingsbpe_name_resource.id}/privateLinkServiceConnections/${privateEndpoints_votingsbpe_name}'
         properties: {
           privateLinkServiceId: namespaces_votingservicebusaimoczwhjiepc_externalid
           groupIds: [
@@ -66,9 +68,30 @@ resource privateEndpoints_votingsbpe_name_resource 'Microsoft.Network/privateEnd
           }
         }
       }
+    ]
+    manualPrivateLinkServiceConnections: []
+    customNetworkInterfaceName: '${privateEndpointServiceBusName}-nic'
+    subnet: {
+      id: subnetId
+    }
+    ipConfigurations: []
+    customDnsConfigs: [
+      {
+        fqdn: serviceBusFQDN
+        ipAddresses: [
+          '10.0.250.5' //TODO: get the IP address of the service bus
+        ]
+      }
+    ]
+  }
+}
+resource privateEndpoint_SQLServer 'Microsoft.Network/privateEndpoints@2022-09-01' = {
+  name: privateEndpointSQLServerName
+  location: location
+  properties: {
+    privateLinkServiceConnections: [
       {
         name: sqlServerPrivateEndpointName
-        //id: '${privateEndpoints_votingsbpe_name_resource.id}/privateLinkServiceConnections/${privateEndpoints_votingsbpe_name}'
         properties: {
           privateLinkServiceId: existingSQLServerNameExternalId
           groupIds: [
@@ -81,9 +104,30 @@ resource privateEndpoints_votingsbpe_name_resource 'Microsoft.Network/privateEnd
           }
         }
       }
+    ]
+    manualPrivateLinkServiceConnections: []
+    customNetworkInterfaceName: '${privateEndpointSQLServerName}-nic'
+    subnet: {
+      id: '${subnetId}/subnets/${existingSubnetName}'
+    }
+    ipConfigurations: []
+    customDnsConfigs: [
+      {
+        fqdn: sqlServerFQDN
+        ipAddresses: [
+          '10.0.250.5' //TODO: get the IP address of the service bus
+        ]
+      }
+    ]
+  }
+}
+resource privateEndpoint_CosmosDb 'Microsoft.Network/privateEndpoints@2022-09-01' = {
+  name: privateEndpointCosmosDbName
+  location: location
+  properties: {
+    privateLinkServiceConnections: [
       {
         name: cosmosDBPrivateEndpointName
-        //id: '${privateEndpoints_votingsbpe_name_resource.id}/privateLinkServiceConnections/${privateEndpoints_votingsbpe_name}'
         properties: {
           privateLinkServiceId: existingCosmosDBNameExternalId
           groupIds: [
@@ -96,9 +140,30 @@ resource privateEndpoints_votingsbpe_name_resource 'Microsoft.Network/privateEnd
           }
         }
       }
+    ]
+    manualPrivateLinkServiceConnections: []
+    customNetworkInterfaceName: '${privateEndpointCosmosDbName}-nic'
+    subnet: {
+      id: '${subnetId}/subnets/${existingSubnetName}'
+    }
+    ipConfigurations: []
+    customDnsConfigs: [
+      {
+        fqdn: cosmosDBFQDN
+        ipAddresses: [
+          '10.0.250.5' //TODO: get the IP address of the service bus
+        ]
+      }
+    ]
+  }
+}
+resource privateEndpoint_KeyVault 'Microsoft.Network/privateEndpoints@2022-09-01' = {
+  name: privateEndpointKeyVaultName
+  location: location
+  properties: {
+    privateLinkServiceConnections: [
       {
         name: aKeyVaultPrivateEndpointName
-        //id: '${privateEndpoints_votingsbpe_name_resource.id}/privateLinkServiceConnections/${privateEndpoints_votingsbpe_name}'
         properties: {
           privateLinkServiceId: existingAKeyVaultNameExternalId
           groupIds: [
@@ -111,32 +176,15 @@ resource privateEndpoints_votingsbpe_name_resource 'Microsoft.Network/privateEnd
           }
         }
       }
+
     ]
     manualPrivateLinkServiceConnections: []
-    customNetworkInterfaceName: '${privateEndpointName}-nic'
+    customNetworkInterfaceName: '${privateEndpointKeyVaultName}-nic'
     subnet: {
-      id: '${vnetId}/subnets/${existingSubnetName}'
+      id: '${subnetId}/subnets/${existingSubnetName}'
     }
     ipConfigurations: []
     customDnsConfigs: [
-      {
-        fqdn: serviceBusFQDN
-        ipAddresses: [
-          '10.0.250.5' //TODO: get the IP address of the service bus
-        ]
-      }
-      {
-        fqdn: sqlServerFQDN
-        ipAddresses: [
-          '10.0.250.5' //TODO: get the IP address of the service bus
-        ]
-      }
-      {
-        fqdn: cosmosDBFQDN
-        ipAddresses: [
-          '10.0.250.5' //TODO: get the IP address of the service bus
-        ]
-      }
       {
         fqdn: aKeyVaultFQDN
         ipAddresses: [
@@ -144,5 +192,39 @@ resource privateEndpoints_votingsbpe_name_resource 'Microsoft.Network/privateEnd
         ]
       }
     ]
+  }
+}
+
+resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' existing = {
+  name: vnetName
+}
+
+resource serviceBusPrivateDNSZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.${serviceBusFQDN}'
+  location: 'global'
+  properties: {}
+  dependsOn: [vnet]
+}
+
+resource serviceBusPrivateDNSZoneRecord 'Microsoft.Network/privateDnsZones/CNAME@2020-06-01' = {
+  parent: serviceBusPrivateDNSZone
+  name: '${serviceBusPrivateDNSZone.name}_privatelink.${serviceBusFQDN}'
+  properties: {
+    ttl: 3600
+    cnameRecord: {
+      cname: '${serviceBusFQDN}.'
+    }
+  }
+}
+
+resource serviceBusPrivateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  parent: serviceBusPrivateDNSZone
+  name: '${serviceBusPrivateDNSZone.name}-link'
+  location: 'global'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: vnetId
+    }
   }
 }

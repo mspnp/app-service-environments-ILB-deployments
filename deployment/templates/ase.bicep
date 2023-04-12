@@ -19,7 +19,7 @@ param zoneRedundant bool = false
 
 var aseName_var = 'ASE-${uniqueString(resourceGroup().id)}'
 var aseId = aseName.id
-var aseSubnetName = 'ase-subnet-${aseName_var}'
+var aseSubnetName = 'ase-subnet-${aseName_var}-1'
 var aseSubnetId = vnetName_aseSubnetName.id
 var aseLoadBalancingMode = 'Web, Publishing'
 
