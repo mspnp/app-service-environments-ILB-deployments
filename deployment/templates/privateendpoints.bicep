@@ -7,219 +7,154 @@ param location string = resourceGroup().location
 param SubId string
 
 @description('The name of the existing vnet to use.')
-param vnetName string = 'ASE-VNETaimoczwhjiepc'
+param vnetName string
 
 @description('The name of the existing subnet to use.')
-param existingSubnetName string = 'jumpbox-subnet-aimoczwhjiepc'
+param subnetName string
 
 @description('The name of the existing service bus namespace for creating the private endpoint.')
-param existingServiceBusName string = 'votingservicebusaimoczwhjiepc'
+param sbName string
 
 @description('The name of the existing sql server namespace for creating the private endpoint.')
-param existingSQLServerName string = 'sqlserveraimoczwhjiepc'
+param sqlName string
 
 @description('The name of the existing cosmosdb namespace for creating the private endpoint.')
-param existingCosmosDBName string = 'votingcosmos-aimoczwhjiepc'
+param cosmosDBName string
 
 @description('The name of the existing keyvault namespace for creating the private endpoint.')
-param existingAKeyVaultName string = 'akeyvault-aimoczwhjiepc'
+param akvName string
 
-param namespaces_votingservicebusaimoczwhjiepc_externalid string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.ServiceBus/namespaces/${existingServiceBusName}'
-param existingSQLServerNameExternalId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.Sql/servers/${existingSQLServerName}'
-param existingCosmosDBNameExternalId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.DocumentDB/databaseAccounts/${existingCosmosDBName}'
-param existingAKeyVaultNameExternalId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.KeyVault/vaults/${existingAKeyVaultName}'
+
 
 var vnetId = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.Network/virtualNetworks/${vnetName}'
-var subnetId = '${vnetId}/subnets/${existingSubnetName}'
+var subnetId = '${vnetId}/subnets/${subnetName}'
 
-var privateEndpointServiceBusName = 'votingprivateendpoint${uniqueString(resourceGroup().id)}'
-var privateEndpointSQLServerName = 'votingprivateendpoint${uniqueString(resourceGroup().id)}'
-var privateEndpointCosmosDbName = 'votingprivateendpoint${uniqueString(resourceGroup().id)}'
-var privateEndpointKeyVaultName = 'votingprivateendpoint${uniqueString(resourceGroup().id)}'
+param sbId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.ServiceBus/namespaces/${sbName}'
+param sqlServerId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.Sql/servers/${sqlName}'
+param cosmosId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.DocumentDB/databaseAccounts/${cosmosDBName}'
+param akvId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.KeyVault/vaults/${akvName}'
 
-var serviceBusFQDN = '${existingServiceBusName}.servicebus.windows.net'
-var serviceBusPrivateEndpointName = 'votingservicebus${uniqueString(resourceGroup().id)}'
 
-var sqlServerFQDN = '${existingSQLServerName}.database.windows.net'
-var sqlServerPrivateEndpointName = 'votingsqlserver${uniqueString(resourceGroup().id)}'
+//1. Create a private endpoint for the SQL Server
 
-var cosmosDBFQDN = '${existingCosmosDBName}.documents.azure.com'
-var cosmosDBPrivateEndpointName = 'votingcosmosdb${uniqueString(resourceGroup().id)}'
+//Create variables for the private endpoint
+var privateEndpointSQLName = 'voting-SQL-PE-${subnetName}'
+var privateDnsZoneSQLName = 'privatelink${environment().suffixes.sqlServerHostname}'
+var pvtEndpointDnsGroupSQLName = '${privateEndpointSQLName}/sqldnsgroupname'
 
-var aKeyVaultFQDN = '${existingAKeyVaultName}.vault.azure.net'
-var aKeyVaultPrivateEndpointName = 'votingakeyvault${uniqueString(resourceGroup().id)}'
-
-resource privateEndpoint_ServiceBus 'Microsoft.Network/privateEndpoints@2022-09-01' = {
-  name: privateEndpointServiceBusName
+//Create the private endpoint
+resource privateEndpointSQL 'Microsoft.Network/privateEndpoints@2021-05-01' = {
+  name: privateEndpointSQLName
   location: location
   properties: {
-    privateLinkServiceConnections: [
-      {
-        name: serviceBusPrivateEndpointName
-        properties: {
-          privateLinkServiceId: namespaces_votingservicebusaimoczwhjiepc_externalid
-          groupIds: [
-            'namespace'
-          ]
-          privateLinkServiceConnectionState: {
-            status: 'Approved'
-            description: 'Auto-Approved'
-            actionsRequired: 'None'
-          }
-        }
-      }
-    ]
-    manualPrivateLinkServiceConnections: []
-    customNetworkInterfaceName: '${privateEndpointServiceBusName}-nic'
     subnet: {
       id: subnetId
     }
-    ipConfigurations: []
-    customDnsConfigs: [
-      {
-        fqdn: serviceBusFQDN
-        ipAddresses: [
-          '10.0.250.5' //TODO: get the IP address of the service bus
-        ]
-      }
-    ]
-  }
-}
-resource privateEndpoint_SQLServer 'Microsoft.Network/privateEndpoints@2022-09-01' = {
-  name: privateEndpointSQLServerName
-  location: location
-  properties: {
     privateLinkServiceConnections: [
       {
-        name: sqlServerPrivateEndpointName
+        name: privateEndpointSQLName
         properties: {
-          privateLinkServiceId: existingSQLServerNameExternalId
+          privateLinkServiceId: sqlServerId
           groupIds: [
-            'namespace'
+            'sqlServer'
           ]
-          privateLinkServiceConnectionState: {
-            status: 'Approved'
-            description: 'Auto-Approved'
-            actionsRequired: 'None'
-          }
         }
-      }
-    ]
-    manualPrivateLinkServiceConnections: []
-    customNetworkInterfaceName: '${privateEndpointSQLServerName}-nic'
-    subnet: {
-      id: '${subnetId}/subnets/${existingSubnetName}'
-    }
-    ipConfigurations: []
-    customDnsConfigs: [
-      {
-        fqdn: sqlServerFQDN
-        ipAddresses: [
-          '10.0.250.5' //TODO: get the IP address of the service bus
-        ]
-      }
-    ]
-  }
-}
-resource privateEndpoint_CosmosDb 'Microsoft.Network/privateEndpoints@2022-09-01' = {
-  name: privateEndpointCosmosDbName
-  location: location
-  properties: {
-    privateLinkServiceConnections: [
-      {
-        name: cosmosDBPrivateEndpointName
-        properties: {
-          privateLinkServiceId: existingCosmosDBNameExternalId
-          groupIds: [
-            'namespace'
-          ]
-          privateLinkServiceConnectionState: {
-            status: 'Approved'
-            description: 'Auto-Approved'
-            actionsRequired: 'None'
-          }
-        }
-      }
-    ]
-    manualPrivateLinkServiceConnections: []
-    customNetworkInterfaceName: '${privateEndpointCosmosDbName}-nic'
-    subnet: {
-      id: '${subnetId}/subnets/${existingSubnetName}'
-    }
-    ipConfigurations: []
-    customDnsConfigs: [
-      {
-        fqdn: cosmosDBFQDN
-        ipAddresses: [
-          '10.0.250.5' //TODO: get the IP address of the service bus
-        ]
-      }
-    ]
-  }
-}
-resource privateEndpoint_KeyVault 'Microsoft.Network/privateEndpoints@2022-09-01' = {
-  name: privateEndpointKeyVaultName
-  location: location
-  properties: {
-    privateLinkServiceConnections: [
-      {
-        name: aKeyVaultPrivateEndpointName
-        properties: {
-          privateLinkServiceId: existingAKeyVaultNameExternalId
-          groupIds: [
-            'namespace'
-          ]
-          privateLinkServiceConnectionState: {
-            status: 'Approved'
-            description: 'Auto-Approved'
-            actionsRequired: 'None'
-          }
-        }
-      }
-
-    ]
-    manualPrivateLinkServiceConnections: []
-    customNetworkInterfaceName: '${privateEndpointKeyVaultName}-nic'
-    subnet: {
-      id: '${subnetId}/subnets/${existingSubnetName}'
-    }
-    ipConfigurations: []
-    customDnsConfigs: [
-      {
-        fqdn: aKeyVaultFQDN
-        ipAddresses: [
-          '10.0.250.5' //TODO: get the IP address of the service bus
-        ]
       }
     ]
   }
 }
 
-resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' existing = {
-  name: vnetName
-}
-
-resource serviceBusPrivateDNSZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
-  name: 'privatelink.${serviceBusFQDN}'
+resource privateDnsZoneSQL 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: privateDnsZoneSQLName
   location: 'global'
   properties: {}
-  dependsOn: [vnet]
 }
 
-resource serviceBusPrivateDNSZoneRecord 'Microsoft.Network/privateDnsZones/CNAME@2020-06-01' = {
-  parent: serviceBusPrivateDNSZone
-  name: '${serviceBusPrivateDNSZone.name}_privatelink.${serviceBusFQDN}'
+resource privateDnsZoneLinkSQL 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  parent: privateDnsZoneSQL
+  name: '${privateDnsZoneSQLName}-link'
+  location: 'global'
   properties: {
-    ttl: 3600
-    cnameRecord: {
-      cname: '${serviceBusFQDN}.'
+    registrationEnabled: true
+    virtualNetwork: {
+      id: vnetId
     }
   }
 }
 
-resource serviceBusPrivateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
-  parent: serviceBusPrivateDNSZone
-  name: '${serviceBusPrivateDNSZone.name}-link'
+resource pvtEndpointDnsGroupSQL 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-05-01' = {
+  name: pvtEndpointDnsGroupSQLName
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'config1'
+        properties: {
+          privateDnsZoneId: privateDnsZoneSQL.id
+        }
+      }
+    ]
+  }
+  dependsOn: [
+    privateEndpointSQL
+  ]
+}
+
+resource privateDnsZoneARecordSQL 'Microsoft.Network/privateDnsZones/A@2020-06-01' = {
+  parent: privateDnsZoneSQL
+  name: '${privateEndpointSQLName}.${privateDnsZoneSQLName}'
+  properties: {
+    ttl: 3600
+    aRecords: [
+      {
+        ipv4Address: privateEndpointSQL.properties.customDnsConfigs[0].ipAddresses[0]
+      }
+    ]
+  }
+}
+
+
+
+
+//2. Create a private endpoint for the Service Bus
+
+//Create variables for the private endpoint
+var serviceBusHostName = '.servicebus.windows.net'
+var privateEndpointSBName = 'voting-SB-PE-${subnetName}'
+var privateDnsZoneSBName = 'privatelink${serviceBusHostName}'
+var pvtEndpointDnsGroupSBName = '${privateEndpointSBName}/sbdnsgroupname'
+
+//Create the private endpoint
+
+resource privateEndpointSB 'Microsoft.Network/privateEndpoints@2021-05-01' = {
+  name: privateEndpointSBName
+  location: location
+  properties: {
+    subnet: {
+      id: subnetId
+    }
+    privateLinkServiceConnections: [
+      {
+        name: privateEndpointSBName
+        properties: {
+          privateLinkServiceId: sbId
+          groupIds: [
+            'namespace'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+resource privateDnsZoneSB 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: privateDnsZoneSBName
+  location: 'global'
+  properties: {}
+}
+
+resource privateDnsZoneLinkSB 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  parent: privateDnsZoneSB
+  name: '${privateDnsZoneSBName}-link'
   location: 'global'
   properties: {
     registrationEnabled: false
@@ -228,3 +163,196 @@ resource serviceBusPrivateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtual
     }
   }
 }
+
+resource pvtEndpointDnsGroupSB 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-05-01' = {
+  name: pvtEndpointDnsGroupSBName
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'config1'
+        properties: {
+          privateDnsZoneId: privateDnsZoneSB.id
+        }
+      }
+    ]
+  }
+  dependsOn: [
+    privateEndpointSB
+  ]
+}
+
+resource privateDnsZoneARecordSB 'Microsoft.Network/privateDnsZones/A@2020-06-01' = {
+  parent: privateDnsZoneSB
+  name: '${privateEndpointSBName}.${privateDnsZoneSBName}'
+  properties: {
+    ttl: 3600
+    aRecords: [
+      {
+        ipv4Address: privateEndpointSB.properties.customDnsConfigs[0].ipAddresses[0]
+      }
+    ]
+  }
+}
+
+
+
+//3. Create a private endpoint for the Cosmos DB
+
+//Create variables for the private endpoint
+var cosmosDBHostName = '.documents.azure.com'
+var privateEndpointCosmosName = 'voting-Cosmos-PE-${subnetName}'
+var privateDnsZoneCosmosName = 'privatelink${cosmosDBHostName}'
+var pvtEndpointDnsGroupCosmosName = '${privateEndpointCosmosName}/sbdnsgroupname'
+
+//Create the private endpoint
+resource privateEndpointCosmos 'Microsoft.Network/privateEndpoints@2021-05-01' = {
+  name: privateEndpointCosmosName
+  location: location
+  properties: {
+    subnet: {
+      id: subnetId
+    }
+    privateLinkServiceConnections: [
+      {
+        name: privateEndpointCosmosName
+        properties: {
+          privateLinkServiceId: cosmosId
+          groupIds: [
+            'Sql'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+resource privateDnsZoneCosmos 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: privateDnsZoneCosmosName
+  location: 'global'
+  properties: {}
+}
+
+resource privateDnsZoneLinkCosmos 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  parent: privateDnsZoneCosmos
+  name: '${privateDnsZoneCosmosName}-link'
+  location: 'global'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: vnetId
+    }
+  }
+}
+
+resource pvtEndpointDnsGroupCosmos 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-05-01' = {
+  name: pvtEndpointDnsGroupCosmosName
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'config1'
+        properties: {
+          privateDnsZoneId: privateDnsZoneCosmos.id
+        }
+      }
+    ]
+  }
+  dependsOn: [
+    privateEndpointCosmos
+  ]
+}
+
+resource privateDnsZoneARecordCosmos 'Microsoft.Network/privateDnsZones/A@2020-06-01' = {
+  parent: privateDnsZoneCosmos
+  name: '${privateEndpointCosmosName}.${privateDnsZoneCosmosName}'
+  properties: {
+    ttl: 3600
+    aRecords: [
+      {
+        ipv4Address: privateEndpointCosmos.properties.customDnsConfigs[0].ipAddresses[0]
+      }
+    ]
+  }
+}
+
+
+
+
+
+//4. Create a private endpoint for the Keyvault
+
+//Create variables for the private endpoint
+var akvHostName = '.vaultcore.azure.net'
+var privateEndpointAKVName = 'voting-AKV-PE-${subnetName}'
+var privateDnsZoneAKVName = 'privatelink${akvHostName}'
+var pvtEndpointDnsGroupAKVName = '${privateEndpointAKVName}/sbdnsgroupname'
+
+//Create the private endpoint
+resource privateEndpointAKV 'Microsoft.Network/privateEndpoints@2021-05-01' = {
+  name: privateEndpointAKVName
+  location: location
+  properties: {
+    subnet: {
+      id: subnetId
+    }
+    privateLinkServiceConnections: [
+      {
+        name: privateEndpointAKVName
+        properties: {
+          privateLinkServiceId: akvId
+          groupIds: [
+            'vault'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+resource privateDnsZoneAKV 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: privateDnsZoneAKVName
+  location: 'global'
+  properties: {}
+}
+
+resource privateDnsZoneLinkAKV 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  parent: privateDnsZoneAKV
+  name: '${privateDnsZoneAKVName}-link'
+  location: 'global'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: vnetId
+    }
+  }
+}
+
+resource pvtEndpointDnsGroupAKV 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-05-01' = {
+  name: pvtEndpointDnsGroupAKVName
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'config1'
+        properties: {
+          privateDnsZoneId: privateDnsZoneAKV.id
+        }
+      }
+    ]
+  }
+  dependsOn: [
+    privateEndpointAKV
+  ]
+}
+
+resource privateDnsZoneARecordAKV 'Microsoft.Network/privateDnsZones/A@2020-06-01' = {
+  parent: privateDnsZoneAKV
+  name: '${privateEndpointAKVName}.${privateDnsZoneAKVName}'
+  properties: {
+    ttl: 3600
+    aRecords: [
+      {
+        ipv4Address: privateEndpointAKV.properties.customDnsConfigs[0].ipAddresses[0]
+      }
+    ]
+  }
+}
+
