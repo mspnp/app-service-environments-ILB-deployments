@@ -203,11 +203,13 @@ az deployment group create --resource-group $RGNAME --template-file templates/pr
 #11. Obtain AZURE_CREDENTIALS for Github Runner - Copy the output of the following command and paste it in the Github Runner App Secret
 #Create a service principal for the voting app
 az ad sp create-for-rbac --name "votingApp" --role contributor \
-                                --scopes /subscriptions/$SubId/resourceGroups/$RGNAME \
+                                --scopes /subscriptions/$SUBID/resourceGroups/$RGNAME \
                                 --sdk-auth
 
 #Note on github self hosted runner 
 #1. Ensure it supports long path names (>260 characters) by setting the GPO
+#   - Go to Group Policy Editor
+#   - Computer Configuration -> Administrative Templates -> System -> Filesystem -> Enable Win32 long paths
 #2. Ensure it has the following software installed
 #   - Azure CLI
 #   - Powershell latest version
