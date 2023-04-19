@@ -377,7 +377,7 @@ resource Microsoft_Web_sites_votingFunctionName 'Microsoft.Web/sites@2022-03-01'
         }
         {
           name: 'sqldb_connection'
-          value: 'Server=${reference(resourceId('Microsoft.Sql/servers', sqlServerName), '2022-02-01-preview').fullyQualifiedDomainName},1433;Database=${sqlDatabaseName};'
+          value: 'Server=${sqlServerName}.privatelink.database.windows.net,1433;Database=${sqlDatabaseName};'
         }
       ]
     }
@@ -410,7 +410,7 @@ resource Microsoft_Web_sites_votingApiName 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'ConnectionStrings:SqlDbConnection'
-          value: 'Server=${reference(resourceId('Microsoft.Sql/servers', sqlServerName), '2022-02-01-preview').fullyQualifiedDomainName},1433;Database=${sqlDatabaseName};'
+          value: 'Server=${sqlServerName}.privatelink.database.windows.net,1433;Database=${sqlDatabaseName};'
         }
       ]
     }
@@ -426,7 +426,6 @@ resource Microsoft_Web_sites_votingWebName 'Microsoft.Web/sites@2022-03-01' = {
   }
   properties: {
     enabled: true
-    //name: votingWebName_var
     hostingEnvironmentProfile: {
       id:aseId
     }
@@ -459,7 +458,7 @@ resource Microsoft_Web_sites_votingWebName 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'ConnectionStrings:CosmosUri'
-          value: reference(resourceId('Microsoft.DocumentDB/databaseAccounts', cosmosDbName), '2022-05-15').documentEndpoint
+          value: 'https://${cosmosDbName}.privatelink.documents.azure.com:443/'
         }
         {
           name: 'ConnectionStrings:CosmosKey'
