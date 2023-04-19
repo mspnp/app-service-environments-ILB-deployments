@@ -167,7 +167,7 @@ resource keyVaultName_CosmosKey 'Microsoft.KeyVault/vaults/secrets@2022-07-01' =
   parent: keyVaultName
   name: 'CosmosKey'
   properties: {
-    value: listKeys(cosmosName.id, '2022-05-15').primaryMasterKey  //Microsoft.DocumentDB/databaseAccounts@2022-05-15
+    value: cosmosName.listKeys().primaryMasterKey 
   }
 }
 
@@ -175,7 +175,7 @@ resource keyVaultName_ServiceBusListenerConnectionString 'Microsoft.KeyVault/vau
   parent: keyVaultName
   name: 'ServiceBusListenerConnectionString'
   properties: {
-    value: listKeys(serviceBusName_ListenerSharedAccessKey.id, '2021-11-01').primaryConnectionString   //Microsoft.ServiceBus/namespaces/AuthorizationRules
+    value: listKeys(serviceBusName_ListenerSharedAccessKey.id, '2021-11-01').primaryConnectionString
   }
 }
 
@@ -183,7 +183,7 @@ resource keyVaultName_ServiceBusSenderConnectionString 'Microsoft.KeyVault/vault
   parent: keyVaultName
   name: 'ServiceBusSenderConnectionString'
   properties: {
-    value: listKeys(serviceBusName_SenderSharedAccessKey.id, '2021-11-01').primaryConnectionString   //Microsoft.ServiceBus/namespaces/AuthorizationRules
+    value: listKeys(serviceBusName_SenderSharedAccessKey.id, '2021-11-01').primaryConnectionString
   }
 }
 
