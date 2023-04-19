@@ -41,15 +41,13 @@ az account set -n 'suhas-sub'
 
 
 # 0. Create self-signed SSL certificate
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP1_URL}" -out appgw_std.crt -keyout appgw_std.key
-openssl pkcs12 -export -out appgw_std.pfx -in appgw_std.crt -inkey appgw_std.key -passout pass:$PFX_PASSWORD
-CERT_DATA_1=$(cat appgw_std.pfx | base64 | tr -d '\n' | tr -d '\r')
-rm appgw_std.crt appgw_std.key appgw_std.pfx
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP1_URL}" -out appgw_std_1.crt -keyout appgw_std_1.key
+openssl pkcs12 -export -out appgw_std_1.pfx -in appgw_std_1.crt -inkey appgw_std_1.key -passout pass:$PFX_PASSWORD
+CERT_DATA_1=$(cat appgw_std_1.pfx | base64 | tr -d '\n' | tr -d '\r')
 
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP2_URL}" -out appgw_std.crt -keyout appgw_std.key
-openssl pkcs12 -export -out appgw_std.pfx -in appgw_std.crt -inkey appgw_std.key -passout pass:$PFX_PASSWORD
-CERT_DATA_2=$(cat appgw_std.pfx | base64 | tr -d '\n' | tr -d '\r')
-rm appgw_std.crt appgw_std.key appgw_std.pfx
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP2_URL}" -out appgw_std_2.crt -keyout appgw_std_2.key
+openssl pkcs12 -export -out appgw_std_2.pfx -in appgw_std_2.crt -inkey appgw_std_2.key -passout pass:$PFX_PASSWORD
+CERT_DATA_2=$(cat appgw_std_2.pfx | base64 | tr -d '\n' | tr -d '\r')
 
 # 1. creates the resource group
 az group create --name "${RGNAME}" --location "${RGLOCATION}"
@@ -200,17 +198,11 @@ az deployment group create --resource-group $RGNAME --template-file templates/pr
     akvName=$KEYVAULT_NAME sbName=$SERVICEBUS_NAMESPACE_NAME
 
 
-#11. Obtain AZURE_CREDENTIALS for Github Runner - Copy the output of the following command and paste it in the Github Runner App Secret
-#Create a service principal for the voting app
-az ad sp create-for-rbac --name "votingApp" --role contributor \
-                                --scopes /subscriptions/$SUBID/resourceGroups/$RGNAME \
-                                --sdk-auth
+#12. Run in Powershell - Add App Gateway certificate to the local machine - must use elevated permissions
+certutil -f -p $PFX_PASSWORD -importpfx appgw_std_1.pfx
+certutil -f -p $PFX_PASSWORD -importpfx appgw_std_2.pfx
 
-#Note on github self hosted runner 
-#1. Ensure it supports long path names (>260 characters) by setting the GPO
-#   - Go to Group Policy Editor
-#   - Computer Configuration -> Administrative Templates -> System -> Filesystem -> Enable Win32 long paths
-#2. Ensure it has the following software installed
-#   - Azure CLI
-#   - Powershell latest version
-#   - GIT
+rm appgw_std_1.crt appgw_std_1.key appgw_std_1.pfx appgw_std_2.crt appgw_std_2.key appgw_std_2.pfx
+
+Add-Content "C:/windows/system32/drivers/etc/hosts" "$APPGW_PUBLIC_IP $APPGW_APP1_URL"
+Add-Content "C:/windows/system32/drivers/etc/hosts" "$APPGW_PUBLIC_IP $APPGW_APP2_URL"

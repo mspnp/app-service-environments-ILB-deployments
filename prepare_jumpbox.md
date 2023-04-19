@@ -4,68 +4,44 @@ These steps need to be excuted only once.
 
 RDP into the jumpbox (you can get the IP using AzurePortal). The user and password are the ones that you defined as environment variables at the begining.
 
-## Windows Linux Subsystem
+# Prerequisites to Run Github Actions Runner
 
-- Open Power shell, and enable [Windows Linux Subsystem](https://docs.microsoft.com/en-us/windows/wsl/install-win10):
+1. Ensure it supports long path names (>260 characters) by setting the GPO
+   - Go to Group Policy Editor
+   - Computer Configuration -> Administrative Templates -> System -> Filesystem -> Enable Win32 long paths
+2. Ensure it has the following software installed
+   - Azure CLI
+   - GIT
 
-  ```powershell
-  Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux​1
-  ```
+# Set Up Github Actions Variables
 
-  You will need to restart the computer. 
+On the github repo, set up the following variables:
 
-- Log in the VM again.
+* FUNCTION_APPPATH - eg. "code/function-app-ri/FunctionApp"
+* BUILDCONFIGURATION - eg. "Release"
+* FUNCTION_APP_NAME - App Service name for Voting Function App
+* VOTINGDATA_APPPATH - eg. "code/web-app-ri/VotingData"
+* VOTINGDATA_WEB_APP_NAME - App Service name for Voting API App
+* VOTINGWEB_APPPATH - eg. "code/web-app-ri/VotingWeb"
+* VOTINGWEB_APP_NAME - App Service name for Voting Web App
 
-- Follow [these instructions](https://docs.microsoft.com/windows/wsl/install-on-server) to install WSL on your jumpbox. Since you are using Windows Server 2019, you will need to skip the Windows Store part and instead download Ubuntu 20.04 directly from [this link](https://docs.microsoft.com/windows/wsl/install-manual#downloading-distributions).
+# Set Up Github Actions Secret
 
-- Open WSL Ubuntu. When prompted, enter admin user and password. Then execute this command:
-
-  ```bash
-  sudo apt-get update 
-  ```
-
-## Azure CLI
-
-On command line, execute the following command to install [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-apt?view=azure-cli-latest):
-
+Obtain AZURE_CREDENTIALS for Github Runner - Copy the output of the following command and paste it in the Github Runner App Secret:
 ```
- curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
- az login
-```
-
-## Software dependencies
-
-The following software packages are required:
-
-- nodejs
-- npm
-- bower
-- zip
-- .Net 5
-
-Run the following commands to install the above dependencies:
-
-```
-sudo apt-get install nodejs
-sudo apt install npm
-sudo npm install -g bower
-sudo apt install zip
-wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-sudo dpkg -i packages-microsoft-prod.deb
-sudo add-apt-repository universe
-sudo apt-get update
-sudo apt-get install apt-transport-https
-sudo apt-get update
-sudo apt-get install dotnet-sdk-3.1
-sudo apt-get install dotnet-sdk-5.0
+az ad sp create-for-rbac --name $ --role contributor \
+                                --scopes /subscriptions/$SUBID/resourceGroups/$RGNAME \
+                                --sdk-auth
 ```
 
-## Download source code
+# Set Up Github Actions Runner on Jumpbox
 
-Clone the code from the git repository.
+1. Navigate to this Github Repository
+2. Go to settings
+3. Go to Actions > Runners
+4. Click on new Self Hosted Runner and follow the instructions on the jumpbox
+5. Run each workflow in the .github/workflows directory
 
-```bash
-git clone https://github.com/mspnp/app-service-environments-ILB-deployments.git
-```
 
-[Return to README.md](./README.md#publish-aspnet-core-web-api-and-function-applications)
+
+[Return to README.md >](./README.md#publish-aspnet-core-web-api-and-function-applications)
