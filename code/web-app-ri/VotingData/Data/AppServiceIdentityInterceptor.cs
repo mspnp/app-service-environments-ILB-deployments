@@ -19,7 +19,7 @@ namespace VotingData.Data
             const string SqlDatabaseResourceUrl = "https://database.windows.net/";
 
             var sqlConnection = (SqlConnection)connection;
-            sqlConnection.AccessToken = await new AzureServiceTokenProvider().GetAccessTokenAsync(SqlDatabaseResourceUrl);
+            // sqlConnection.AccessToken = await new AzureServiceTokenProvider().GetAccessTokenAsync(SqlDatabaseResourceUrl);
 
             return await base.ConnectionOpeningAsync(connection, eventData, result, cancellationToken);
         }
