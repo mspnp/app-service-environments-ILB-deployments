@@ -39,7 +39,7 @@ param akvId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().n
 
 //Create variables for the private endpoint
 var privateEndpointSQLName = 'voting-SQL-PE-${subnetName}'
-var privateDnsZoneSQLName = 'privatelink${environment().suffixes.sqlServerHostname}'
+var privateDnsZoneSQLName = 'privatelink2${environment().suffixes.sqlServerHostname}'
 var pvtEndpointDnsGroupSQLName = '${privateEndpointSQLName}/sqldnsgroupname'
 
 //Create the private endpoint
@@ -47,6 +47,7 @@ resource privateEndpointSQL 'Microsoft.Network/privateEndpoints@2021-05-01' = {
   name: privateEndpointSQLName
   location: location
   properties: {
+    customNetworkInterfaceName: '${privateEndpointSQLName}-nic'
     subnet: {
       id: subnetId
     }
@@ -75,7 +76,7 @@ resource privateDnsZoneLinkSQL 'Microsoft.Network/privateDnsZones/virtualNetwork
   name: '${privateDnsZoneSQLName}-link'
   location: 'global'
   properties: {
-    registrationEnabled: true
+    registrationEnabled: false
     virtualNetwork: {
       id: vnetId
     }
@@ -120,7 +121,7 @@ resource privateDnsZoneARecordSQL 'Microsoft.Network/privateDnsZones/A@2020-06-0
 //Create variables for the private endpoint
 var serviceBusHostName = '.servicebus.windows.net'
 var privateEndpointSBName = 'voting-SB-PE-${subnetName}'
-var privateDnsZoneSBName = 'privatelink${serviceBusHostName}'
+var privateDnsZoneSBName = 'privatelink2${serviceBusHostName}'
 var pvtEndpointDnsGroupSBName = '${privateEndpointSBName}/sbdnsgroupname'
 
 //Create the private endpoint
@@ -201,7 +202,7 @@ resource privateDnsZoneARecordSB 'Microsoft.Network/privateDnsZones/A@2020-06-01
 //Create variables for the private endpoint
 var cosmosDBHostName = '.documents.azure.com'
 var privateEndpointCosmosName = 'voting-Cosmos-PE-${subnetName}'
-var privateDnsZoneCosmosName = 'privatelink${cosmosDBHostName}'
+var privateDnsZoneCosmosName = 'privatelink2${cosmosDBHostName}'
 var pvtEndpointDnsGroupCosmosName = '${privateEndpointCosmosName}/sbdnsgroupname'
 
 //Create the private endpoint
@@ -283,7 +284,7 @@ resource privateDnsZoneARecordCosmos 'Microsoft.Network/privateDnsZones/A@2020-0
 //Create variables for the private endpoint
 var akvHostName = '.vaultcore.azure.net'
 var privateEndpointAKVName = 'voting-AKV-PE-${subnetName}'
-var privateDnsZoneAKVName = 'privatelink${akvHostName}'
+var privateDnsZoneAKVName = 'privatelink2${akvHostName}'
 var pvtEndpointDnsGroupAKVName = '${privateEndpointAKVName}/sbdnsgroupname'
 
 //Create the private endpoint
