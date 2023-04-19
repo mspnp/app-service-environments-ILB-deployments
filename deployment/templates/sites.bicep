@@ -426,7 +426,6 @@ resource Microsoft_Web_sites_votingWebName 'Microsoft.Web/sites@2022-03-01' = {
   }
   properties: {
     enabled: true
-    //name: votingWebName_var
     hostingEnvironmentProfile: {
       id:aseId
     }
