@@ -30,7 +30,7 @@ namespace FunctionApp
                 var connectionString = Environment.GetEnvironmentVariable("sqldb_connection");
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
-                    // conn.AccessToken = await new AzureServiceTokenProvider().GetAccessTokenAsync(SqlDatabaseResourceUrl);
+                    conn.AccessToken = await new AzureServiceTokenProvider().GetAccessTokenAsync(SqlDatabaseResourceUrl);
 
                     conn.Open();
 
