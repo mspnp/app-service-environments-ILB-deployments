@@ -27,7 +27,7 @@ FIREWALL_PREFIX=10.0.200.0/24
 JUMPBOX_PREFIX=10.0.250.0/24
 
 #Suhas params - delete before commits
-RGNAME=asev3-rg
+RGNAME=asev3aac-rg
 RGLOCATION=eastus
 SQLADMINUSER=suadmin
 SQLADMINPASSWORD=P@ssword1234
