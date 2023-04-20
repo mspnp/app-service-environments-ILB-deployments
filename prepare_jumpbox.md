@@ -29,7 +29,7 @@ On the github repo, set up the following variables:
 
 Obtain AZURE_CREDENTIALS for Github Runner - Copy the output of the following command and paste it in the Github Runner App Secret:
 ```
-az ad sp create-for-rbac --name $ --role contributor \
+az ad sp create-for-rbac --name "votingapp-service-principal" --role contributor \
                                 --scopes /subscriptions/$SUBID/resourceGroups/$RGNAME \
                                 --sdk-auth
 ```

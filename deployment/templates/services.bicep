@@ -44,6 +44,7 @@ resource cosmosName 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
   kind: 'GlobalDocumentDB'
   properties: {
     //ipRangeFilter: ''
+    publicNetworkAccess: 'Disabled'
     enableAutomaticFailover: false
     enableMultipleWriteLocations: true
     isVirtualNetworkFilterEnabled: true    
@@ -112,6 +113,7 @@ resource sqlServerName 'Microsoft.Sql/servers@2022-02-01-preview' = {
   location: location
   properties: {
     administratorLogin: sqlAdminUserName
+    publicNetworkAccess: 'Disabled'
     administratorLoginPassword: sqlAdminPassword
     version: '12.0'
   }
@@ -155,6 +157,7 @@ resource keyVaultName 'Microsoft.KeyVault/vaults@2022-07-01' = {
   location: location
   properties: {
     accessPolicies: []
+    publicNetworkAccess: 'disabled'
     sku: {
       family: 'A'
       name: 'standard'
@@ -175,7 +178,7 @@ resource keyVaultName_ServiceBusListenerConnectionString 'Microsoft.KeyVault/vau
   parent: keyVaultName
   name: 'ServiceBusListenerConnectionString'
   properties: {
-    value: listKeys(serviceBusName_ListenerSharedAccessKey.id, '2021-11-01').primaryConnectionString
+    value: 'Endpoint=sb://${serviceBusName_var}.privatelink.servicebus.windows.net/;SharedAccessKeyName=${serviceBusName_ListenerSharedAccessKey.name};SharedAccessKey=${listKeys(serviceBusName_ListenerSharedAccessKey.id, '2021-11-01').primaryKey}'
   }
 }
 
@@ -183,7 +186,7 @@ resource keyVaultName_ServiceBusSenderConnectionString 'Microsoft.KeyVault/vault
   parent: keyVaultName
   name: 'ServiceBusSenderConnectionString'
   properties: {
-    value: listKeys(serviceBusName_SenderSharedAccessKey.id, '2021-11-01').primaryConnectionString
+    value: 'Endpoint=sb://${serviceBusName_var}.privatelink.servicebus.windows.net/;SharedAccessKeyName=${serviceBusName_SenderSharedAccessKey.name};SharedAccessKey=${listKeys(serviceBusName_SenderSharedAccessKey.id, '2021-11-01').primaryKey}'
   }
 }
 
@@ -196,6 +199,7 @@ resource serviceBusName 'Microsoft.ServiceBus/namespaces@2022-01-01-preview' = {
     capacity: 1
   }
   properties: {
+    publicNetworkAccess: 'Disabled'
     zoneRedundant: zoneRedundant
   }
 }
