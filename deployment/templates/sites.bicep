@@ -373,11 +373,11 @@ resource Microsoft_Web_sites_votingFunctionName 'Microsoft.Web/sites@2022-03-01'
         }
         {
           name: 'SERVICEBUS_CONNECTION_STRING'
-          value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.privatelink.vault.azure.net/secrets/${serviceBusListenerConnectionStringSecretName})'
+          value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/${serviceBusListenerConnectionStringSecretName})'
         }
         {
           name: 'sqldb_connection'
-          value: 'Server=${sqlServerName}.privatelink.database.windows.net,1433;Database=${sqlDatabaseName};'
+          value: 'Server=${sqlServerName}.database.windows.net,1433;Database=${sqlDatabaseName};'
         }
       ]
     }
@@ -410,7 +410,7 @@ resource Microsoft_Web_sites_votingApiName 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'ConnectionStrings:SqlDbConnection'
-          value: 'Server=${sqlServerName}.privatelink.database.windows.net,1433;Database=${sqlDatabaseName};'
+          value: 'Server=${sqlServerName}.database.windows.net,1433;Database=${sqlDatabaseName};'
         }
       ]
     }
@@ -438,7 +438,7 @@ resource Microsoft_Web_sites_votingWebName 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'ConnectionStrings:sbConnectionString'
-          value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.privatelink.vault.azure.net/secrets/${serviceBusSenderConnectionStringSecretName})'
+          value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/${serviceBusSenderConnectionStringSecretName})'
           
         }
         {
@@ -451,7 +451,7 @@ resource Microsoft_Web_sites_votingWebName 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'ConnectionStrings:RedisConnectionString'
-          value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.privatelink.vault.azure.net/secrets/${keyVaultName_redisSecretName.name})'
+          value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/${keyVaultName_redisSecretName.name})'
         }
         {
           name: 'ConnectionStrings:queueName'
@@ -463,7 +463,7 @@ resource Microsoft_Web_sites_votingWebName 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'ConnectionStrings:CosmosKey'
-          value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.privatelink.vault.azure.net/secrets/${cosmosKeySecretName})'
+          value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/${cosmosKeySecretName})'
         }
       ]
     }
