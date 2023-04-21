@@ -459,7 +459,7 @@ resource Microsoft_Web_sites_votingWebName 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'ConnectionStrings:CosmosUri'
-          value: 'https://${cosmosDbName}.privatelink.documents.azure.com:443/'
+          value: 'https://${cosmosDbName}.documents.azure.com:443/'
         }
         {
           name: 'ConnectionStrings:CosmosKey'
@@ -496,6 +496,47 @@ resource Microsoft_Web_sites_testWebName 'Microsoft.Web/sites@2022-03-01' = {
         }
       ]
     }
+  }
+}
+
+resource keyVault_WebAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2022-07-01' = {
+  parent: keyvault_parent
+  name: 'add'
+  properties: {
+    accessPolicies: [
+      {
+        objectId: Microsoft_Web_sites_votingFunctionName.identity.principalId
+        permissions: {
+          secrets: ['get','list']
+          keys: ['get','list']
+        }
+        tenantId: subscription().tenantId
+      }
+      {
+        objectId: Microsoft_Web_sites_votingWebName.identity.principalId
+        permissions: {
+          secrets: ['get','list']
+          keys: ['get','list']
+        }
+        tenantId: subscription().tenantId
+      }
+      {
+        objectId: Microsoft_Web_sites_votingApiName.identity.principalId
+        permissions: {
+          secrets: ['get','list']
+          keys: ['get','list']
+        }
+        tenantId: subscription().tenantId
+      }
+      {
+        objectId: Microsoft_Web_sites_testWebName.identity.principalId
+        permissions: {
+          secrets: ['get','list']
+          keys: ['get','list']
+        }
+        tenantId: subscription().tenantId
+      }
+    ]
   }
 }
 

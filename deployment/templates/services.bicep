@@ -178,7 +178,7 @@ resource keyVaultName_ServiceBusListenerConnectionString 'Microsoft.KeyVault/vau
   parent: keyVaultName
   name: 'ServiceBusListenerConnectionString'
   properties: {
-    value: 'Endpoint=sb://${serviceBusName_var}.privatelink.servicebus.windows.net/;SharedAccessKeyName=${serviceBusName_ListenerSharedAccessKey.name};SharedAccessKey=${listKeys(serviceBusName_ListenerSharedAccessKey.id, '2021-11-01').primaryKey}'
+    value: 'Endpoint=sb://${serviceBusName_var}.servicebus.windows.net/;SharedAccessKeyName=${serviceBusName_ListenerSharedAccessKey.name};SharedAccessKey=${listKeys(serviceBusName_ListenerSharedAccessKey.id, '2021-11-01').primaryKey}'
   }
 }
 
@@ -186,7 +186,7 @@ resource keyVaultName_ServiceBusSenderConnectionString 'Microsoft.KeyVault/vault
   parent: keyVaultName
   name: 'ServiceBusSenderConnectionString'
   properties: {
-    value: 'Endpoint=sb://${serviceBusName_var}.privatelink.servicebus.windows.net/;SharedAccessKeyName=${serviceBusName_SenderSharedAccessKey.name};SharedAccessKey=${listKeys(serviceBusName_SenderSharedAccessKey.id, '2021-11-01').primaryKey}'
+    value: 'Endpoint=sb://${serviceBusName_var}.servicebus.windows.net/;SharedAccessKeyName=${serviceBusName_SenderSharedAccessKey.name};SharedAccessKey=${listKeys(serviceBusName_SenderSharedAccessKey.id, '2021-11-01').primaryKey}'
   }
 }
 
