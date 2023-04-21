@@ -2,13 +2,6 @@
 
 This reference implementation shows how you can improve the resiliency of an ASE deployment by deploying in multiple availability zones. The standard deployment is also covered. For more information about this scenario, see the reference architecture: [High availability enterprise deployment using App Services Environment](https://docs.microsoft.com/azure/architecture/reference-architectures/enterprise-integration/ase-high-availability-deployment)
 
-## TODO
-
-```
-[] Make sure you delete secrets
-[] Service endpoints to private endpoints
-```
-
 ## Prerequisites
 
 - [azure-cli](https://docs.microsoft.com/cli/azure/install-azure-cli?view=azure-cli-latest) 2.37.0 or newer.
