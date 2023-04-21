@@ -27,20 +27,6 @@ FIREWALL_PREFIX=10.0.200.0/24
 JUMPBOX_PREFIX=10.0.250.0/24
 SERVICES_PREFIX=10.0.50.0/24
 
-#Suhas params - delete before commits
-RGNAME=asev3aac-rg
-RGLOCATION=eastus
-SQLADMINUSER=suadmin
-SQLADMINPASSWORD=P@ssword1234
-JUMPBOX_USER=sujumpboxuser
-JUMPBOX_PASSWORD=P@ssword1234
-PFX_PASSWORD=P@ssword1234
-VNET_NAME=ASE-VNETaimoczwhjiepc
-INTERNAL_APP1_URL="kind-ocean-006539010.2.azurestaticapps.net"
-INTERNAL_APP2_URL="kind-ocean-006539010.2.azurestaticapps.net"
-az account set -n 'suhas-sub'
-
-
 # 0. Create self-signed SSL certificate
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP1_URL}" -out appgw_std_1.crt -keyout appgw_std_1.key
 openssl pkcs12 -export -out appgw_std_1.pfx -in appgw_std_1.crt -inkey appgw_std_1.key -passout pass:$PFX_PASSWORD
@@ -113,34 +99,6 @@ VOTING_COUNTER_FUNCTION_NAME=$(az deployment group show -g $RGNAME -n sites --qu
 VOTING_COUNTER_FUNCTION_PRINCIPAL_ID=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingCounterFunctionIdentityPrincipalId.value -o tsv) && \
 VOTING_API_NAME=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingApiName.value -o tsv) && \
 VOTING_API_PRINCIPAL_ID=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingApiIdentityPrincipalId.value -o tsv)
-
-
-
-#Suhas Test
-echo $VNET_NAME
-echo $VNET_ROUTE_NAME
-echo $ASE_DNS_SUFFIX
-echo $ASE_SUBNET_NAME
-echo $ASE_NAME
-echo $ASE_ID
-echo $ASE_ILB_IP_ADDRESS
-echo $JUMPBOX_PUBLIC_IP
-echo $JUMPBOX_SUBNET_NAME
-echo $COSMOSDB_NAME
-echo $SQL_SERVER
-echo $SQL_DATABASE
-echo $KEYVAULT_NAME
-echo $RESOURCES_STORAGE_ACCOUNT
-echo $RESOURCES_CONTAINER_NAME
-echo $RESOURCE_URL
-echo $INTERNAL_APP1_URL
-echo $INTERNAL_APP2_URL
-echo $VOTING_WEB_APP_PRINCIPAL_ID
-echo $VOTING_COUNTER_FUNCTION_NAME
-echo $VOTING_COUNTER_FUNCTION_PRINCIPAL_ID
-echo $VOTING_API_NAME
-echo $VOTING_API_PRINCIPAL_ID
-
 
 # 9. Deploy RBAC for resources after AAD propagation
 until az ad sp show --id ${VOTING_WEB_APP_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
