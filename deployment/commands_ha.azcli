@@ -3,8 +3,8 @@
 #jq 
 
 # App url
-APPGW_APP1_URL=votingapp-std.contoso.com
-APPGW_APP2_URL=testapp-std.contoso.com
+APPGW_APP1_URL=votingapp-ha.contoso.com
+APPGW_APP2_URL=testapp-ha.contoso.com
 
 #Parameters
 RGNAME=yourResourceGroupName
@@ -21,15 +21,15 @@ SUBID=$(az account show --query id -o tsv)
 #IP Addresses
 NET_PREFIX=10.0.0.0/16
 APPGW_PREFIX=10.0.1.0/24
-REDIS_PREFIX=10.0.2.0/24
-ASE_PREFIX=10.0.100.0/24
+REDIS1_PREFIX=10.0.11.0/24
+REDIS2_PREFIX=10.0.12.0/24
+ASE_PREFIX=10.0.101.0/24
 FIREWALL_PREFIX=10.0.200.0/24
 JUMPBOX_PREFIX=10.0.250.0/24
-SERVICES_PREFIX=10.0.50.0/24
 
 #Suhas params - delete before commits
-RGNAME=asev3-rg
-RGLOCATION=australiaeast
+RGNAME=aacasev3-rg
+RGLOCATION=eastus
 SQLADMINUSER=suadmin
 SQLADMINPASSWORD=P@ssword1234
 JUMPBOX_USER=sujumpboxuser
@@ -42,13 +42,13 @@ az account set -n 'suhas-sub'
 
 
 # 0. Create self-signed SSL certificate
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP1_URL}" -out appgw_std_1.crt -keyout appgw_std_1.key
-openssl pkcs12 -export -out appgw_std_1.pfx -in appgw_std_1.crt -inkey appgw_std_1.key -passout pass:$PFX_PASSWORD
-CERT_DATA_1=$(cat appgw_std_1.pfx | base64 | tr -d '\n' | tr -d '\r')
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP1_URL}" -out appgw_ha_1.crt -keyout appgw_ha_1.key
+openssl pkcs12 -export -out appgw_ha_1.pfx -in appgw_ha_1.crt -inkey appgw_ha_1.key -passout pass:$PFX_PASSWORD
+CERT_DATA_1=$(cat appgw_ha_1.pfx | base64 | tr -d '\n' | tr -d '\r')
 
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP2_URL}" -out appgw_std_2.crt -keyout appgw_std_2.key
-openssl pkcs12 -export -out appgw_std_2.pfx -in appgw_std_2.crt -inkey appgw_std_2.key -passout pass:$PFX_PASSWORD
-CERT_DATA_2=$(cat appgw_std_2.pfx | base64 | tr -d '\n' | tr -d '\r')
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP2_URL}" -out appgw_ha_2.crt -keyout appgw_ha_2.key
+openssl pkcs12 -export -out appgw_ha_2.pfx -in appgw_ha_2.crt -inkey appgw_ha_2.key -passout pass:$PFX_PASSWORD
+CERT_DATA_2=$(cat appgw_ha_2.pfx | base64 | tr -d '\n' | tr -d '\r')
 
 # 1. creates the resource group
 az group create --name "${RGNAME}" --location "${RGLOCATION}"
@@ -60,12 +60,13 @@ VNET_NAME=$(az deployment group show -g $RGNAME -n network --query properties.ou
 VNET_ROUTE_NAME=$(az deployment group show -g $RGNAME -n network --query properties.outputs.vnetRouteName.value -o tsv)
 
 # 3. deploy ASE
-az deployment group create --resource-group $RGNAME --template-file templates/ase.bicep -n ase --parameters vnetName=$VNET_NAME vnetRouteName=$VNET_ROUTE_NAME aseSubnetAddressPrefix=$ASE_PREFIX
+az deployment group create --resource-group $RGNAME --template-file templates/ase.bicep -n ase --parameters vnetName=$VNET_NAME vnetRouteName=$VNET_ROUTE_NAME aseSubnetAddressPrefix=$ASE_PREFIX zoneRedundant=true
 ASE_DNS_SUFFIX=$(az deployment group show -g $RGNAME -n ase --query properties.outputs.dnsSuffix.value -o tsv)
 ASE_SUBNET_NAME=$(az deployment group show -g $RGNAME -n ase --query properties.outputs.aseSubnetName.value -o tsv)
 ASE_NAME=$(az deployment group show -g $RGNAME -n ase --query properties.outputs.aseName.value -o tsv)
 ASE_ID=$(az deployment group show -g $RGNAME -n ase --query properties.outputs.aseId.value -o tsv)
 ASE_ILB_IP_ADDRESS=$(az resource show --resource-group $RGNAME --name $ASE_NAME --resource-type "Microsoft.Web/hostingEnvironments" | jq -r '.properties.networkingConfiguration.internalInboundIpAddresses[]')
+ENDPOINTS_LIST=$(az rest --method get --uri $ASE_ID/inboundnetworkdependenciesendpoints?api-version=2016-09-01 | jq '.value[0].endpoints | join(", ")' -j)
 
 # 4. Deploy Firewall
 # Deploy AF
@@ -87,7 +88,8 @@ JUMPBOX_SUBNET_NAME=$(az deployment group show -g $RGNAME -n jumpbox --query pro
 ALLOWED_SUBNET_NAMES=${ASE_SUBNET_NAME},${JUMPBOX_SUBNET_NAME}
 az deployment group create --resource-group $RGNAME --template-file templates/services.bicep \
     --parameters vnetName=$VNET_NAME allowedSubnetNames=$ALLOWED_SUBNET_NAMES \
-                 sqlAdminUserName=$SQLADMINUSER sqlAdminPassword=$SQLADMINPASSWORD sqlAadAdminSid=$ADMIN_USER_ID
+                 sqlAdminUserName=$SQLADMINUSER sqlAdminPassword=$SQLADMINPASSWORD sqlAadAdminSid=$ADMIN_USER_ID \
+                 zoneRedundant=true
 COSMOSDB_NAME=$(az deployment group show -g $RGNAME -n services --query properties.outputs.cosmosDbName.value -o tsv)
 SQL_SERVER=$(az deployment group show -g $RGNAME -n services --query properties.outputs.sqlServerName.value -o tsv)
 SQL_DATABASE=$(az deployment group show -g $RGNAME -n services --query properties.outputs.sqlDatabaseName.value -o tsv)
@@ -105,7 +107,7 @@ RESOURCE_URL="$(az storage account show -g $RGNAME -n $RESOURCES_STORAGE_ACCOUNT
 az deployment group create --resource-group $RGNAME --template-file templates/sites.bicep -n sites --parameters aseName=$ASE_NAME \
     vnetName=$VNET_NAME redisSubnetAddressPrefix=$REDIS_PREFIX cosmosDbName=$COSMOSDB_NAME \
     sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME \
-    aseDnsSuffix=$ASE_DNS_SUFFIX
+    aseDnsSuffix=$ASE_DNS_SUFFIX zoneRedundant=true
 INTERNAL_APP1_URL=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingAppUrl.value -o tsv) && \
 INTERNAL_APP2_URL=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.testAppUrl.value -o tsv) && \
 VOTING_WEB_APP_PRINCIPAL_ID=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingWebAppIdentityPrincipalId.value -o tsv) && \
@@ -172,10 +174,10 @@ az deployment group create --resource-group $RGNAME --template-file templates/pr
 
 
 #12. Run in Powershell - Add App Gateway certificate to the local machine - must use elevated permissions
-certutil -f -p $PFX_PASSWORD -importpfx appgw_std_1.pfx
-certutil -f -p $PFX_PASSWORD -importpfx appgw_std_2.pfx
+certutil -f -p $PFX_PASSWORD -importpfx appgw_ha_1.pfx
+certutil -f -p $PFX_PASSWORD -importpfx appgw_ha_2.pfx
 
-rm appgw_std_1.crt appgw_std_1.key appgw_std_1.pfx appgw_std_2.crt appgw_std_2.key appgw_std_2.pfx
+rm appgw_ha_1.crt appgw_ha_1.key appgw_ha_1.pfx appgw_ha_2.crt appgw_ha_2.key appgw_ha_2.pfx
 
 Add-Content "C:/windows/system32/drivers/etc/hosts" "$APPGW_PUBLIC_IP $APPGW_APP1_URL"
 Add-Content "C:/windows/system32/drivers/etc/hosts" "$APPGW_PUBLIC_IP $APPGW_APP2_URL"

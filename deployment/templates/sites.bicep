@@ -29,21 +29,20 @@ param sqlDatabaseName string
 param logAnalyticsWorkspace string = '${uniqueString(resourceGroup().id)}la'
 
 @description('The availability zone to deploy. Valid values are: 1, 2 or 3. Use empty to not use zones.')
-param zone string = ''
+param zoneRedundant bool = false
 
-var instanceIndex = (empty(zone) ? '0' : zone)
-var redisName_var = 'REDIS-${uniqueString(resourceGroup().id)}-${instanceIndex}'
-var redisSubnetName = 'redis-subnet-${uniqueString(resourceGroup().id)}-${instanceIndex}'
+var redisName_var = 'REDIS-${uniqueString(resourceGroup().id)}}'
+var redisSubnetName = 'redis-subnet-${uniqueString(resourceGroup().id)}'
 var redisSubnetId = vnetName_redisSubnetName.id
-var redisNSGName_var = '${vnetName}-REDIS-${instanceIndex}-NSG'
-var redisSecretName = 'RedisConnectionString${instanceIndex}'
+var redisNSGName_var = '${vnetName}-REDIS-NSG'
+var redisSecretName = 'RedisConnectionString'
 var cosmosKeySecretName = 'CosmosKey'
 var serviceBusListenerConnectionStringSecretName = 'ServiceBusListenerConnectionString'
 var serviceBusSenderConnectionStringSecretName = 'ServiceBusSenderConnectionString'
-var votingApiName_var = 'votingapiapp-${instanceIndex}-${uniqueString(resourceGroup().id)}'
-var votingWebName_var = 'votingwebapp-${instanceIndex}-${uniqueString(resourceGroup().id)}'
-var testWebName_var = 'testwebapp-${instanceIndex}-${uniqueString(resourceGroup().id)}'
-var votingFunctionName_var = 'votingfuncapp-${instanceIndex}-${uniqueString(resourceGroup().id)}'
+var votingApiName_var = 'votingapiapp-${uniqueString(resourceGroup().id)}'
+var votingWebName_var = 'votingwebapp-${uniqueString(resourceGroup().id)}'
+var testWebName_var = 'testwebapp-${uniqueString(resourceGroup().id)}'
+var votingFunctionName_var = 'votingfuncapp-${uniqueString(resourceGroup().id)}'
 var votingApiPlanName_var = '${votingApiName_var}-plan'
 var votingWebPlanName_var = '${votingWebName_var}-plan'
 var testWebPlanName_var = '${testWebName_var}-plan'
@@ -174,7 +173,7 @@ resource vnetName_redisSubnetName 'Microsoft.Network/virtualNetworks/subnets@202
 resource redisName 'Microsoft.Cache/Redis@2022-06-01' = {
   name: redisName_var
   location: location
-  zones: (empty(zone) ? json('null') : array(zone))
+  zones: (zoneRedundant ? ['1','2','3'] : null)
   properties: {
     sku: {
       name: 'Premium'

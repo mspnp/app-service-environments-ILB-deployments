@@ -9,22 +9,6 @@ var firewallSubnetName = 'AzureFirewallSubnet'
 var firewallPublicIpName_var = 'firewallIp-${uniqueString(resourceGroup().id)}'
 var firewallName_var = 'firewall-${uniqueString(resourceGroup().id)}'
 
-/*resource vnetRouteName_resource 'Microsoft.Network/routeTables@2019-11-01' = {
-  name: vnetRouteName
-  location: location
-  tags: {
-    displayName: 'UDR - Subnet'
-  }
-  properties: {
-    routes: concat(aseManagementIpRoutes, array(json('{ "name": "Firewall", "properties": { "addressPrefix": "0.0.0.0/0", "nextHopType": "VirtualAppliance", "nextHopIpAddress": "${reference('Microsoft.Network/azureFirewalls/${firewallName_var}', '2019-09-01', 'Full').properties.ipConfigurations[0].properties.privateIPAddress}" } }')))
-  }
-  dependsOn: [
-    firewallName
-  ]
-}
-
-*/
-
 resource vnetName_firewallSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
   name: '${vnetName}/${firewallSubnetName}'
   properties: {
