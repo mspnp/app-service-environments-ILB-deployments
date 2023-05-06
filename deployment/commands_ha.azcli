@@ -14,9 +14,10 @@ SQLADMINPASSWORD=yoursqlAdminPassword
 JUMPBOX_USER=yourJumpBoxUser
 JUMPBOX_PASSWORD=yourPassword
 PFX_PASSWORD=yourPassword
+SUBNAME=yourSubscription
 ADMIN_USER_ID=$(az ad signed-in-user show --query id -o tsv)
 SUBID=$(az account show --query id -o tsv)
-
+az account set -n $SUBNAME
 
 #IP Addresses
 NET_PREFIX=10.0.0.0/16
@@ -26,20 +27,6 @@ ASE_PREFIX=10.0.101.0/24
 FIREWALL_PREFIX=10.0.200.0/24
 JUMPBOX_PREFIX=10.0.250.0/24
 SERVICES_PREFIX=10.0.50.0/24
-
-#Suhas params - delete before commits
-RGNAME=aacasev3-rg
-RGLOCATION=eastus
-SQLADMINUSER=suadmin
-SQLADMINPASSWORD=P@ssword1234
-JUMPBOX_USER=sujumpboxuser
-JUMPBOX_PASSWORD=P@ssword1234
-PFX_PASSWORD=P@ssword1234
-VNET_NAME=ASE-VNETaimoczwhjiepc
-INTERNAL_APP1_URL="kind-ocean-006539010.2.azurestaticapps.net"
-INTERNAL_APP2_URL="kind-ocean-006539010.2.azurestaticapps.net"
-az account set -n 'suhas-sub'
-
 
 # 0. Create self-signed SSL certificate
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP1_URL}" -out appgw_ha_1.crt -keyout appgw_ha_1.key
