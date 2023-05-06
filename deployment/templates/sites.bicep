@@ -31,7 +31,7 @@ param logAnalyticsWorkspace string = '${uniqueString(resourceGroup().id)}la'
 @description('The availability zone to deploy. Valid values are: 1, 2 or 3. Use empty to not use zones.')
 param zoneRedundant bool = false
 
-var redisName_var = 'REDIS-${uniqueString(resourceGroup().id)}}'
+var redisName_var = 'REDIS-${uniqueString(resourceGroup().id)}'
 var redisSubnetName = 'redis-subnet-${uniqueString(resourceGroup().id)}'
 var redisSubnetId = vnetName_redisSubnetName.id
 var redisNSGName_var = '${vnetName}-REDIS-NSG'
