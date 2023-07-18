@@ -29,7 +29,7 @@ SERVICES_PREFIX=10.0.50.0/24
 
 #Suhas params - delete before commits
 RGNAME=asev3-rg
-RGLOCATION=australiaeast
+RGLOCATION=eastus
 SQLADMINUSER=suadmin
 SQLADMINPASSWORD=P@ssword1234
 JUMPBOX_USER=sujumpboxuser

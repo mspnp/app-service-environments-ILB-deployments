@@ -18,15 +18,63 @@ param zoneRedundant bool = false
 
 
 var aseName_var = 'ASE-${uniqueString(resourceGroup().id)}'
+var aseNSGName_var = 'ASE-nsg-${uniqueString(resourceGroup().id)}'
 var aseId = aseName.id
 var aseSubnetName = 'ase-subnet-${aseName_var}-1'
 var aseSubnetId = vnetName_aseSubnetName.id
 var aseLoadBalancingMode = 'Web, Publishing'
 
+
+resource aseNSGName 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
+  name: aseNSGName_var
+  location: location
+  tags: {
+    displayName: aseNSGName_var
+  }
+  properties: {
+    securityRules: [
+      {
+        name: 'ASE-inbound-allow_web_traffic_from_app_gateway'
+        properties: {
+          description: 'Allow web traffic from app gateway'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          destinationPortRanges: [
+            '80'
+            '443'
+          ]
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+          access: 'Allow'
+          priority: 200
+          direction: 'Inbound'
+        }
+      }
+      {
+        name: 'ASE-inbound-deny-all'
+        properties: {
+          description: 'Deny all other traffic'
+          protocol: '*'
+          sourcePortRange: '*'
+          destinationPortRange: '*'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+          access: 'Deny'
+          priority: 250
+          direction: 'Inbound'
+        }
+      }
+    ]
+  }
+}
+
 resource vnetName_aseSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' = {
   name: '${vnetName}/${aseSubnetName}'  
   properties: {
     addressPrefix: aseSubnetAddressPrefix
+    networkSecurityGroup: {
+      id: aseNSGName.id
+    }
     delegations: [
       {
         name: 'Microsoft.Web.hostingEnvironments'
