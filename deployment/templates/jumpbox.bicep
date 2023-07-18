@@ -15,15 +15,15 @@ param adminUsername string
 param adminPassword string
 
 var computerName = 'votingjb'
-var jumpboxName_var = 'jumpbox-${computerName}${uniqueString(resourceGroup().id)}'
+var jumpboxName = 'jumpbox-${computerName}${uniqueString(resourceGroup().id)}'
 var jumpboxSubnetName = 'jumpbox-subnet-${uniqueString(resourceGroup().id)}'
-var jumpboxSubnetId = vnetName_jumpboxSubnetName.id
-var jumpboxPublicIpName_var = 'jumpbox-pip-${uniqueString(resourceGroup().id)}'
-var jumpboxNSGName_var = '${vnetName}-JUMPBOX-NSG'
-var jumpboxNicName_var = 'jumpbox-nic-${uniqueString(resourceGroup().id)}'
+var jumpboxSubnetId = jumpboxSubnet.id
+var jumpboxPublicIpName = 'jumpbox-pip-${uniqueString(resourceGroup().id)}'
+var jumpboxNSGName = '${vnetName}-JUMPBOX-NSG'
+var jumpboxNicName = 'jumpbox-nic-${uniqueString(resourceGroup().id)}'
 
-resource jumpboxPublicIpName 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
-  name: jumpboxPublicIpName_var
+resource jumpboxPublicIp 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
+  name: jumpboxPublicIpName
   location: location
   properties: {
     publicIPAllocationMethod: 'Static'
@@ -33,11 +33,11 @@ resource jumpboxPublicIpName 'Microsoft.Network/publicIPAddresses@2022-07-01' = 
   }
 }
 
-resource jumpboxNSGName 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
-  name: jumpboxNSGName_var
+resource jumpboxNSG 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
+  name: jumpboxNSGName
   location: location
   tags: {
-    displayName: jumpboxNSGName_var
+    displayName: jumpboxNSGName
   }
   properties: {
     securityRules: [
@@ -59,18 +59,18 @@ resource jumpboxNSGName 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
   }
 }
 
-resource vnetName_jumpboxSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
+resource jumpboxSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
   name: '${vnetName}/${jumpboxSubnetName}'
   properties: {
     addressPrefix: subnetAddressPrefix
     networkSecurityGroup: {
-      id: jumpboxNSGName.id
+      id: jumpboxNSG.id
     }
   }
 }
 
-resource jumpboxNicName 'Microsoft.Network/networkInterfaces@2022-07-01' = {
-  name: jumpboxNicName_var
+resource jumpboxNic 'Microsoft.Network/networkInterfaces@2022-07-01' = {
+  name: jumpboxNicName
   location: location
   properties: {
     ipConfigurations: [
@@ -82,7 +82,7 @@ resource jumpboxNicName 'Microsoft.Network/networkInterfaces@2022-07-01' = {
           }
           privateIPAllocationMethod: 'Dynamic'
           publicIPAddress: {
-            id: resourceId(resourceGroup().name, 'Microsoft.Network/publicIpAddresses', jumpboxPublicIpName_var)
+            id: resourceId(resourceGroup().name, 'Microsoft.Network/publicIpAddresses', jumpboxPublicIpName)
           }
         }
       }
@@ -90,8 +90,8 @@ resource jumpboxNicName 'Microsoft.Network/networkInterfaces@2022-07-01' = {
   }
 }
 
-resource jumpboxName 'Microsoft.Compute/virtualMachines@2022-08-01' = {
-  name: jumpboxName_var
+resource jumpbox 'Microsoft.Compute/virtualMachines@2022-08-01' = {
+  name: jumpboxName
   location: location
   properties: {
     hardwareProfile: {
@@ -121,7 +121,7 @@ resource jumpboxName 'Microsoft.Compute/virtualMachines@2022-08-01' = {
     networkProfile: {
       networkInterfaces: [
         {
-          id: jumpboxNicName.id
+          id: jumpboxNic.id
         }
       ]
     }
@@ -133,6 +133,6 @@ resource jumpboxName 'Microsoft.Compute/virtualMachines@2022-08-01' = {
   }
 }
 
-output jumpboxName string = jumpboxName_var
+output jumpboxName string = jumpboxName
 output jumpboxSubnetName string = jumpboxSubnetName
-output jumpboxPublicIpAddress string = jumpboxPublicIpName.properties.ipAddress
+output jumpboxPublicIpAddress string = jumpboxPublicIp.properties.ipAddress

@@ -53,7 +53,7 @@ resource servicesNSG 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
 }
 
 //Create a subnet for all private endpoints
-resource vnetName_servicesSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
+resource servicesSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
   name: '${vnetName}/${servicesSubnetName}'
   properties: {
     addressPrefix: subnetAddressPrefix
@@ -70,7 +70,7 @@ resource privateEndpointSQL 'Microsoft.Network/privateEndpoints@2021-05-01' = {
   properties: {
     customNetworkInterfaceName: '${privateEndpointSQLName}-nic'
     subnet: {
-      id: vnetName_servicesSubnetName.id
+      id: servicesSubnet.id
     }
     privateLinkServiceConnections: [
       {
@@ -149,7 +149,7 @@ resource privateEndpointSB 'Microsoft.Network/privateEndpoints@2021-05-01' = {
   location: location
   properties: {
     subnet: {
-      id: vnetName_servicesSubnetName.id
+      id: servicesSubnet.id
     }
     privateLinkServiceConnections: [
       {
@@ -229,7 +229,7 @@ resource privateEndpointCosmos 'Microsoft.Network/privateEndpoints@2021-05-01' =
   location: location
   properties: {
     subnet: {
-      id: vnetName_servicesSubnetName.id
+      id: servicesSubnet.id
     }
     privateLinkServiceConnections: [
       {
@@ -311,7 +311,7 @@ resource privateEndpointAKV 'Microsoft.Network/privateEndpoints@2021-05-01' = {
   location: location
   properties: {
     subnet: {
-      id: vnetName_servicesSubnetName.id
+      id: servicesSubnet.id
     }
     privateLinkServiceConnections: [
       {

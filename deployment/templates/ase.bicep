@@ -17,19 +17,19 @@ param dedicatedHostCount int = 0
 param zoneRedundant bool = false
 
 
-var aseName_var = 'ASE-${uniqueString(resourceGroup().id)}'
-var aseNSGName_var = 'ASE-nsg-${uniqueString(resourceGroup().id)}'
-var aseId = aseName.id
-var aseSubnetName = 'ase-subnet-${aseName_var}-1'
+var aseName = 'ASE-${uniqueString(resourceGroup().id)}'
+var aseNSGName = 'ASE-nsg-${uniqueString(resourceGroup().id)}'
+var aseId = ase.id
+var aseSubnetName = 'ase-subnet-${aseName}-1'
 var aseSubnetId = vnetName_aseSubnetName.id
 var aseLoadBalancingMode = 'Web, Publishing'
 
 
-resource aseNSGName 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
-  name: aseNSGName_var
+resource aseNSG 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
+  name: aseNSGName
   location: location
   tags: {
-    displayName: aseNSGName_var
+    displayName: aseNSGName
   }
   properties: {
     securityRules: [
@@ -73,7 +73,7 @@ resource vnetName_aseSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-
   properties: {
     addressPrefix: aseSubnetAddressPrefix
     networkSecurityGroup: {
-      id: aseNSGName.id
+      id: aseNSG.id
     }
     delegations: [
       {
@@ -89,8 +89,8 @@ resource vnetName_aseSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-
   }
 }
 
-resource aseName 'Microsoft.Web/hostingEnvironments@2022-03-01' = {
-  name: aseName_var
+resource ase 'Microsoft.Web/hostingEnvironments@2022-03-01' = {
+  name: aseName
   location: location
   kind: 'ASEV3'
   properties: {
@@ -106,4 +106,4 @@ resource aseName 'Microsoft.Web/hostingEnvironments@2022-03-01' = {
 output dnsSuffix string = reference(aseId).dnsSuffix
 output aseId string = aseId 
 output aseSubnetName string = aseSubnetName
-output aseName string = aseName_var
+output aseName string = aseName

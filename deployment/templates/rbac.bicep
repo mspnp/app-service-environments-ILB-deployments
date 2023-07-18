@@ -2,7 +2,7 @@ param votingWebAppIdentityPrincipalId string
 param votingCounterFunctionIdentityPrincipalId string
 param keyVaultName string
 
-resource keyVaultName_add 'Microsoft.KeyVault/vaults/accessPolicies@2022-07-01' = {
+resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2022-07-01' = {
   name: '${keyVaultName}/add'
   properties: {
     accessPolicies: [

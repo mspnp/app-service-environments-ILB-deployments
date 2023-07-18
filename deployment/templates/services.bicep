@@ -20,23 +20,23 @@ param zoneRedundant bool = false
 @description('Comma separated subnet names that can access the services.')
 param allowedSubnetNames string
 
-var cosmosName_var = 'votingcosmos-${uniqueString(resourceGroup().id)}'
+var cosmosName = 'votingcosmos-${uniqueString(resourceGroup().id)}'
 var cosmosDatabaseName = 'cacheDB'
 var cosmosContainerName = 'cacheContainer'
 var cosmosPartitionKeyPaths = [
   '/MessageType'
 ]
-var sqlServerName_var = 'sqlserver${uniqueString(resourceGroup().id)}'
+var sqlServerName = 'sqlserver${uniqueString(resourceGroup().id)}'
 var sqlDatabaseName = 'voting'
-var serviceBusName_var = 'votingservicebus${uniqueString(resourceGroup().id)}'
-var serviceBusQueue = 'votingqueue'
-var resourcesStorageAccountName_var = toLower('resources${uniqueString(resourceGroup().id)}')
+var serviceBusName = 'votingservicebus${uniqueString(resourceGroup().id)}'
+var serviceBusQueueName = 'votingqueue'
+var resourcesStorageAccountName = toLower('resources${uniqueString(resourceGroup().id)}')
 var resourcesContainerName = 'rscontainer'
-var keyVaultName_var = 'akeyvault1-${uniqueString(resourceGroup().id)}'
+var keyVaultName = 'akeyvault1-${uniqueString(resourceGroup().id)}'
 var allowedSubnetNamesArray = split(allowedSubnetNames, ',')
  
-resource cosmosName 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
-  name: cosmosName_var
+resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
+  name: cosmosName
   location: location
   tags: {
     defaultExperience: 'Core (SQL)'
@@ -65,8 +65,8 @@ resource cosmosName 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
   }
 }
 
-resource cosmosName_cosmosDatabaseName 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2022-05-15' = {
-  parent: cosmosName
+resource cosmosDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2022-05-15' = {
+  parent: cosmos
   name: cosmosDatabaseName
   properties: {
     resource: {
@@ -78,8 +78,8 @@ resource cosmosName_cosmosDatabaseName 'Microsoft.DocumentDB/databaseAccounts/sq
   }
 }
 
-resource cosmosName_cosmosDatabaseName_cosmosContainerName 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2022-05-15' = {
-  parent: cosmosName_cosmosDatabaseName
+resource cosmosDatabaseContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2022-05-15' = {
+  parent: cosmosDatabase
   name: cosmosContainerName
   properties: {
     options: {
@@ -108,8 +108,8 @@ resource cosmosName_cosmosDatabaseName_cosmosContainerName 'Microsoft.DocumentDB
   }
 }
  
-resource sqlServerName 'Microsoft.Sql/servers@2022-02-01-preview' = {
-  name: sqlServerName_var
+resource sqlServer 'Microsoft.Sql/servers@2022-02-01-preview' = {
+  name: sqlServerName
   location: location
   properties: {
     administratorLogin: sqlAdminUserName
@@ -119,8 +119,8 @@ resource sqlServerName 'Microsoft.Sql/servers@2022-02-01-preview' = {
   }
 }
 
-resource sqlServerName_sqlDatabaseName 'Microsoft.Sql/servers/databases@2022-02-01-preview' = {
-  parent: sqlServerName
+resource sqlServerDatabase 'Microsoft.Sql/servers/databases@2022-02-01-preview' = {
+  parent: sqlServer
   name: sqlDatabaseName
   location: location
   sku: {
@@ -138,8 +138,8 @@ resource sqlServerName_sqlDatabaseName 'Microsoft.Sql/servers/databases@2022-02-
 }
 
 
-resource sqlServerName_activeDirectory 'Microsoft.Sql/servers/administrators@2022-02-01-preview' = {
-  parent: sqlServerName
+resource sqlServerActiveDirectory 'Microsoft.Sql/servers/administrators@2022-02-01-preview' = {
+  parent: sqlServer
   name: 'activeDirectory'
   //location: location
   properties: {
@@ -150,10 +150,8 @@ resource sqlServerName_activeDirectory 'Microsoft.Sql/servers/administrators@202
   }
 }
 
-
-
-resource keyVaultName 'Microsoft.KeyVault/vaults@2022-07-01' = {
-  name: keyVaultName_var
+resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
+  name: keyVaultName
   location: location
   properties: {
     accessPolicies: []
@@ -166,32 +164,32 @@ resource keyVaultName 'Microsoft.KeyVault/vaults@2022-07-01' = {
   }
 }
 
-resource keyVaultName_CosmosKey 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVaultName
+resource keyVaultCosmosKey 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
   name: 'CosmosKey'
   properties: {
-    value: cosmosName.listKeys().primaryMasterKey 
+    value: cosmos.listKeys().primaryMasterKey 
   }
 }
 
-resource keyVaultName_ServiceBusListenerConnectionString 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVaultName
+resource keyVaultServiceBusListenerConnectionString 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
   name: 'ServiceBusListenerConnectionString'
   properties: {
-    value: 'Endpoint=sb://${serviceBusName_var}.servicebus.windows.net/;SharedAccessKeyName=${serviceBusName_ListenerSharedAccessKey.name};SharedAccessKey=${listKeys(serviceBusName_ListenerSharedAccessKey.id, '2021-11-01').primaryKey}'
+    value: 'Endpoint=sb://${serviceBusName}.servicebus.windows.net/;SharedAccessKeyName=${serviceBusListenerSharedAccessKey.name};SharedAccessKey=${listKeys(serviceBusListenerSharedAccessKey.id, '2021-11-01').primaryKey}'
   }
 }
 
-resource keyVaultName_ServiceBusSenderConnectionString 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVaultName
+resource keyVaultServiceBusSenderConnectionString 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
   name: 'ServiceBusSenderConnectionString'
   properties: {
-    value: 'Endpoint=sb://${serviceBusName_var}.servicebus.windows.net/;SharedAccessKeyName=${serviceBusName_SenderSharedAccessKey.name};SharedAccessKey=${listKeys(serviceBusName_SenderSharedAccessKey.id, '2021-11-01').primaryKey}'
+    value: 'Endpoint=sb://${serviceBusName}.servicebus.windows.net/;SharedAccessKeyName=${serviceBusSenderSharedAccessKey.name};SharedAccessKey=${listKeys(serviceBusSenderSharedAccessKey.id, '2021-11-01').primaryKey}'
   }
 }
 
-resource serviceBusName 'Microsoft.ServiceBus/namespaces@2022-01-01-preview' = {
-  name: serviceBusName_var
+resource serviceBus 'Microsoft.ServiceBus/namespaces@2022-01-01-preview' = {
+  name: serviceBusName
   location: location
   sku: {
     name: 'Premium'
@@ -204,8 +202,8 @@ resource serviceBusName 'Microsoft.ServiceBus/namespaces@2022-01-01-preview' = {
   }
 }
 
-resource serviceBusName_ListenerSharedAccessKey 'Microsoft.ServiceBus/namespaces/AuthorizationRules@2022-01-01-preview' = {
-  parent: serviceBusName
+resource serviceBusListenerSharedAccessKey 'Microsoft.ServiceBus/namespaces/AuthorizationRules@2022-01-01-preview' = {
+  parent: serviceBus
   name: 'ListenerSharedAccessKey'
   //location: location
   properties: {
@@ -215,8 +213,8 @@ resource serviceBusName_ListenerSharedAccessKey 'Microsoft.ServiceBus/namespaces
   }
 }
 
-resource serviceBusName_SenderSharedAccessKey 'Microsoft.ServiceBus/namespaces/AuthorizationRules@2022-01-01-preview' = {
-  parent: serviceBusName
+resource serviceBusSenderSharedAccessKey 'Microsoft.ServiceBus/namespaces/AuthorizationRules@2022-01-01-preview' = {
+  parent: serviceBus
   name: 'SenderSharedAccessKey'
   //location: location
   properties: {
@@ -226,9 +224,9 @@ resource serviceBusName_SenderSharedAccessKey 'Microsoft.ServiceBus/namespaces/A
   }
 }
 
-resource serviceBusName_serviceBusQueue 'Microsoft.ServiceBus/namespaces/queues@2022-01-01-preview' = {
-  parent: serviceBusName
-  name: serviceBusQueue
+resource serviceBusQueue 'Microsoft.ServiceBus/namespaces/queues@2022-01-01-preview' = {
+  parent: serviceBus
+  name: serviceBusQueueName
   //location: location
   properties: {
     lockDuration: 'PT1M'
@@ -247,8 +245,8 @@ resource serviceBusName_serviceBusQueue 'Microsoft.ServiceBus/namespaces/queues@
   }
 }
 
-resource resourcesStorageAccountName 'Microsoft.Storage/storageAccounts@2021-09-01' = {
-  name: resourcesStorageAccountName_var
+resource resourcesStorageAccount 'Microsoft.Storage/storageAccounts@2021-09-01' = {
+  name: resourcesStorageAccountName
   location: location
   kind: 'StorageV2'
   sku: {
@@ -262,20 +260,20 @@ resource resourcesStorageAccountName 'Microsoft.Storage/storageAccounts@2021-09-
 }
 
 
-resource resourcesStorageAccountName_default_resourcesContainerName 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-09-01' = {
-  name: '${resourcesStorageAccountName_var}/default/${resourcesContainerName}'
+resource resourcesStorageAccountDefaultResourcesContainerName 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-09-01' = {
+  name: '${resourcesStorageAccountName}/default/${resourcesContainerName}'
   properties: {
     publicAccess: 'Blob'
   }
   dependsOn: [
-    resourcesStorageAccountName
+    resourcesStorageAccount
   ]
 }
 
-output cosmosDbName string = cosmosName_var
-output sqlServerName string = sqlServerName_var
+output cosmosDbName string = cosmosName
+output sqlServerName string = sqlServerName
 output sqlDatabaseName string = sqlDatabaseName
-output resourcesStorageAccountName string = resourcesStorageAccountName_var
+output resourcesStorageAccountName string = resourcesStorageAccountName
 output resourcesContainerName string = resourcesContainerName
-output keyVaultName string = keyVaultName_var
-output serviceBusName string = serviceBusName_var
+output keyVaultName string = keyVaultName
+output serviceBusName string = serviceBusName

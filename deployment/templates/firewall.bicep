@@ -6,10 +6,10 @@ param vnetName string
 param firewallSubnetPrefix string
 
 var firewallSubnetName = 'AzureFirewallSubnet'
-var firewallPublicIpName_var = 'firewallIp-${uniqueString(resourceGroup().id)}'
-var firewallName_var = 'firewall-${uniqueString(resourceGroup().id)}'
+var firewallPublicIpName = 'firewallIp-${uniqueString(resourceGroup().id)}'
+var firewallName = 'firewall-${uniqueString(resourceGroup().id)}'
 
-resource vnetName_firewallSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
+resource firewallSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
   name: '${vnetName}/${firewallSubnetName}'
   properties: {
     addressPrefix: firewallSubnetPrefix
@@ -42,9 +42,9 @@ resource vnetName_firewallSubnetName 'Microsoft.Network/virtualNetworks/subnets@
   }
 }
 
-resource firewallPublicIpName 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
+resource firewallPublicIp 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
   location: location
-  name: firewallPublicIpName_var
+  name: firewallPublicIpName
   sku: {
     name: 'Standard'
   }
@@ -55,8 +55,8 @@ resource firewallPublicIpName 'Microsoft.Network/publicIPAddresses@2022-07-01' =
   }
 }
 
-resource firewallName 'Microsoft.Network/azureFirewalls@2022-07-01' = {
-  name: firewallName_var
+resource firewall 'Microsoft.Network/azureFirewalls@2022-07-01' = {
+  name: firewallName
   location: location
   properties: {
     threatIntelMode: 'Alert'
@@ -65,10 +65,10 @@ resource firewallName 'Microsoft.Network/azureFirewalls@2022-07-01' = {
         name: 'clusterIpConfig'
         properties: {
           publicIPAddress: {
-            id: firewallPublicIpName.id
+            id: firewallPublicIp.id
           }
           subnet: {
-            id: vnetName_firewallSubnetName.id
+            id: firewallSubnet.id
           }
         }
       }
