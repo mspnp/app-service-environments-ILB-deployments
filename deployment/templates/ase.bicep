@@ -21,7 +21,7 @@ var aseName = 'ASE-${uniqueString(resourceGroup().id)}'
 var aseNSGName = 'ASE-nsg-${uniqueString(resourceGroup().id)}'
 var aseId = ase.id
 var aseSubnetName = 'ase-subnet-${aseName}-1'
-var aseSubnetId = vnetName_aseSubnetName.id
+var aseSubnetId = aseSubnet.id
 var aseLoadBalancingMode = 'Web, Publishing'
 
 
@@ -68,7 +68,7 @@ resource aseNSG 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
   }
 }
 
-resource vnetName_aseSubnetName 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' = {
+resource aseSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' = {
   name: '${vnetName}/${aseSubnetName}'  
   properties: {
     addressPrefix: aseSubnetAddressPrefix
