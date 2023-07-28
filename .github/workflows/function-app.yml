@@ -1,0 +1,62 @@
+name: Build and Deploy Function App
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'code/function-app-ri/**'
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup .NET Core 3
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.x
+      
+      - name: Setup .NET Core 7
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 7.0.x
+
+      - name: Restore NuGet Packages
+        run: dotnet restore ${{ vars.FUNCTION_APPPATH }}
+
+      - name: Build
+        run: dotnet build ${{ vars.FUNCTION_APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --no-restore
+
+      - name: Publish
+        run: dotnet publish ${{ vars.FUNCTION_APPPATH }} --configuration ${{ vars.BUILDCONFIGURATION }} --output  ${{ github.workspace }}/VoteCounter --no-restore
+    
+      
+      - name: Archive Files
+        uses: actions/upload-artifact@v2
+        with:
+          name: drop
+          path: ${{ github.workspace }}/VoteCounter
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+    environment: 'production'
+    steps:
+      - name: 'Login via Azure CLI'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - uses: actions/download-artifact@master
+        with:
+          name: drop
+          path: ${{ github.workspace }}/VoteCounter
+      
+      - name: Deploy
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ vars.FUNCTION_APP_NAME }}
+          package: ${{ github.workspace }}/VoteCounter
+          slot-name: production

@@ -1,66 +1,91 @@
-#!/usr/bin/env bash
+#requirements
+#az cli
+#jq 
 
 # App url
 APPGW_APP1_URL=votingapp-std.contoso.com
 APPGW_APP2_URL=testapp-std.contoso.com
 
-# IP Addresses
+#Parameters
+RGNAME=yourResourceGroupName
+RGLOCATION=yourLocation
+SQLADMINUSER=yoursqlAdminUser
+SQLADMINPASSWORD=yoursqlAdminPassword
+JUMPBOX_USER=yourJumpBoxUser
+JUMPBOX_PASSWORD=yourPassword
+PFX_PASSWORD=yourPassword
+ADMIN_USER_ID=$(az ad signed-in-user show --query id -o tsv)
+SUBID=$(az account show --query id -o tsv)
+
+
+#IP Addresses
 NET_PREFIX=10.0.0.0/16
 APPGW_PREFIX=10.0.1.0/24
 REDIS_PREFIX=10.0.2.0/24
 ASE_PREFIX=10.0.100.0/24
 FIREWALL_PREFIX=10.0.200.0/24
 JUMPBOX_PREFIX=10.0.250.0/24
+SERVICES_PREFIX=10.0.50.0/24
 
-# create self-signed SSL certificate
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP1_URL}" -out appgw_std.crt -keyout appgw_std.key
-openssl pkcs12 -export -out appgw_std.pfx -in appgw_std.crt -inkey appgw_std.key -passout pass:$PFX_PASSWORD
-CERT_DATA_1=$(cat appgw_std.pfx | base64 | tr -d '\n' | tr -d '\r')
-rm appgw_std.crt appgw_std.key appgw_std.pfx
+#Suhas params - delete before commits
+RGNAME=asev3-rg
+RGLOCATION=eastus
+SQLADMINUSER=suadmin
+SQLADMINPASSWORD=P@ssword1234
+JUMPBOX_USER=sujumpboxuser
+JUMPBOX_PASSWORD=P@ssword1234
+PFX_PASSWORD=P@ssword1234
+VNET_NAME=ASE-VNETaimoczwhjiepc
+INTERNAL_APP1_URL="kind-ocean-006539010.2.azurestaticapps.net"
+INTERNAL_APP2_URL="kind-ocean-006539010.2.azurestaticapps.net"
+az account set -n 'suhas-sub'
 
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP2_URL}" -out appgw_std.crt -keyout appgw_std.key
-openssl pkcs12 -export -out appgw_std.pfx -in appgw_std.crt -inkey appgw_std.key -passout pass:$PFX_PASSWORD
-CERT_DATA_2=$(cat appgw_std.pfx | base64 | tr -d '\n' | tr -d '\r')
-rm appgw_std.crt appgw_std.key appgw_std.pfx
+
+# 0. Create self-signed SSL certificate
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP1_URL}" -out appgw_std_1.crt -keyout appgw_std_1.key
+openssl pkcs12 -export -out appgw_std_1.pfx -in appgw_std_1.crt -inkey appgw_std_1.key -passout pass:$PFX_PASSWORD
+CERT_DATA_1=$(cat appgw_std_1.pfx | base64 | tr -d '\n' | tr -d '\r')
+
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP2_URL}" -out appgw_std_2.crt -keyout appgw_std_2.key
+openssl pkcs12 -export -out appgw_std_2.pfx -in appgw_std_2.crt -inkey appgw_std_2.key -passout pass:$PFX_PASSWORD
+CERT_DATA_2=$(cat appgw_std_2.pfx | base64 | tr -d '\n' | tr -d '\r')
 
 # 1. creates the resource group
 az group create --name "${RGNAME}" --location "${RGLOCATION}"
 
 # 2. deploy global network related resources
 VNET_NAME=$(az network vnet list -g $RGNAME --query "[?contains(addressSpace.addressPrefixes, '${NET_PREFIX}')]" --query [0].name -o tsv)
-az deployment group create --resource-group $RGNAME --template-file templates/network.json --parameters existentVnetName=$VNET_NAME vnetAddressPrefix=$NET_PREFIX
+az deployment group create --resource-group $RGNAME --template-file templates/network.bicep --parameters existentVnetName=$VNET_NAME vnetAddressPrefix=$NET_PREFIX
 VNET_NAME=$(az deployment group show -g $RGNAME -n network --query properties.outputs.vnetName.value -o tsv)
 VNET_ROUTE_NAME=$(az deployment group show -g $RGNAME -n network --query properties.outputs.vnetRouteName.value -o tsv)
 
 # 3. deploy ASE
-az deployment group create --resource-group $RGNAME --template-file templates/ase.json -n ase --parameters vnetName=$VNET_NAME vnetRouteName=$VNET_ROUTE_NAME aseSubnetAddressPrefix=$ASE_PREFIX
+az deployment group create --resource-group $RGNAME --template-file templates/ase.bicep -n ase --parameters vnetName=$VNET_NAME vnetRouteName=$VNET_ROUTE_NAME aseSubnetAddressPrefix=$ASE_PREFIX
 ASE_DNS_SUFFIX=$(az deployment group show -g $RGNAME -n ase --query properties.outputs.dnsSuffix.value -o tsv)
 ASE_SUBNET_NAME=$(az deployment group show -g $RGNAME -n ase --query properties.outputs.aseSubnetName.value -o tsv)
 ASE_NAME=$(az deployment group show -g $RGNAME -n ase --query properties.outputs.aseName.value -o tsv)
 ASE_ID=$(az deployment group show -g $RGNAME -n ase --query properties.outputs.aseId.value -o tsv)
-ASE_ILB_IP_ADDRESS=$(az resource show --ids ${ASE_ID}/capacities/virtualip --api-version 2018-02-01 --query internalIpAddress --output tsv)
+ASE_ILB_IP_ADDRESS=$(az resource show --resource-group $RGNAME --name $ASE_NAME --resource-type "Microsoft.Web/hostingEnvironments" | jq -r '.properties.networkingConfiguration.internalInboundIpAddresses[]')
 
-# Obtain ASE management IP endpoints
-# This is equivalent to what is described in https://docs.microsoft.com/en-us/azure/app-service/environment/management-addresses#get-your-management-addresses-from-api but using az  instead, and using JQ to parse the results.
-ENDPOINTS_LIST=$(az rest --method get --uri $ASE_ID/inboundnetworkdependenciesendpoints?api-version=2016-09-01 | jq '.value[0].endpoints | join(", ")' -j)
-
+# 4. Deploy Firewall
 # Deploy AF
-az deployment group create --resource-group $RGNAME --template-file templates/firewall.json \
-    --parameters vnetName=$VNET_NAME firewallSubnetPrefix=$FIREWALL_PREFIX vnetRouteName=$VNET_ROUTE_NAME \
-                 aseManagementEndpointsList="$ENDPOINTS_LIST"
+az deployment group create --resource-group $RGNAME --template-file templates/firewall.bicep --parameters vnetName=$VNET_NAME firewallSubnetPrefix=$FIREWALL_PREFIX
 
-# 4. deploy the private DNS zone
-az deployment group create --resource-group $RGNAME --template-file templates/dns.json -n dns --parameters vnetName=$VNET_NAME zoneName=$ASE_DNS_SUFFIX ipAddress=$ASE_ILB_IP_ADDRESS
 
-# 5. deploy jumpbox
-az deployment group create --resource-group $RGNAME --template-file templates/jumpbox.json --parameters vnetName=$VNET_NAME \
+# 5. deploy the private DNS
+az deployment group create --resource-group $RGNAME --template-file templates/dns.bicep -n dns --parameters vnetName=$VNET_NAME zoneName=$ASE_DNS_SUFFIX ipAddress=$ASE_ILB_IP_ADDRESS
+
+
+# 6. deploy jumpbox
+az deployment group create --resource-group $RGNAME --template-file templates/jumpbox.bicep --parameters vnetName=$VNET_NAME \
     subnetAddressPrefix=$JUMPBOX_PREFIX adminUsername=$JUMPBOX_USER adminPassword=$JUMPBOX_PASSWORD
 JUMPBOX_PUBLIC_IP=$(az deployment group show -g $RGNAME -n jumpbox --query properties.outputs.jumpboxPublicIpAddress.value -o tsv)
 JUMPBOX_SUBNET_NAME=$(az deployment group show -g $RGNAME -n jumpbox --query properties.outputs.jumpboxSubnetName.value -o tsv)
 
-# 6. deploy services: cosmos, sql, servicebus and storage
+
+# 7. deploy services: cosmos, sql, servicebus and storage
 ALLOWED_SUBNET_NAMES=${ASE_SUBNET_NAME},${JUMPBOX_SUBNET_NAME}
-az deployment group create --resource-group $RGNAME --template-file templates/services.json \
+az deployment group create --resource-group $RGNAME --template-file templates/services.bicep \
     --parameters vnetName=$VNET_NAME allowedSubnetNames=$ALLOWED_SUBNET_NAMES \
                  sqlAdminUserName=$SQLADMINUSER sqlAdminPassword=$SQLADMINPASSWORD sqlAadAdminSid=$ADMIN_USER_ID
 COSMOSDB_NAME=$(az deployment group show -g $RGNAME -n services --query properties.outputs.cosmosDbName.value -o tsv)
@@ -69,13 +94,15 @@ SQL_DATABASE=$(az deployment group show -g $RGNAME -n services --query propertie
 KEYVAULT_NAME=$(az deployment group show -g $RGNAME -n services --query properties.outputs.keyVaultName.value -o tsv)
 RESOURCES_STORAGE_ACCOUNT=$(az deployment group show -g $RGNAME -n services --query properties.outputs.resourcesStorageAccountName.value -o tsv)
 RESOURCES_CONTAINER_NAME=$(az deployment group show -g $RGNAME -n services --query properties.outputs.resourcesContainerName.value -o tsv)
+SERVICEBUS_NAMESPACE_NAME=$(az deployment group show -g $RGNAME -n services --query properties.outputs.serviceBusName.value -o tsv)
+
 
 # Uploads image to the storage account
 az storage blob upload -c $RESOURCES_CONTAINER_NAME -f Microsoft_Azure_logo_small.png -n Microsoft_Azure_logo_small.png --account-name $RESOURCES_STORAGE_ACCOUNT
-RESOURCE_URL="$(az storage account show -n $RESOURCES_STORAGE_ACCOUNT --query primaryEndpoints.blob -o tsv)$RESOURCES_CONTAINER_NAME/Microsoft_Azure_logo_small.png"
+RESOURCE_URL="$(az storage account show -g $RGNAME -n $RESOURCES_STORAGE_ACCOUNT --query primaryEndpoints.blob -o tsv)$RESOURCES_CONTAINER_NAME/Microsoft_Azure_logo_small.png"
 
-# 7. deploy the application services inside the ASE
-az deployment group create --resource-group $RGNAME --template-file templates/sites.json -n sites --parameters aseName=$ASE_NAME \
+# 8. Create the app service plans and the sites
+az deployment group create --resource-group $RGNAME --template-file templates/sites.bicep -n sites --parameters aseName=$ASE_NAME \
     vnetName=$VNET_NAME redisSubnetAddressPrefix=$REDIS_PREFIX cosmosDbName=$COSMOSDB_NAME \
     sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME \
     aseDnsSuffix=$ASE_DNS_SUFFIX
@@ -87,19 +114,20 @@ VOTING_COUNTER_FUNCTION_PRINCIPAL_ID=$(az deployment group show -g $RGNAME -n si
 VOTING_API_NAME=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingApiName.value -o tsv) && \
 VOTING_API_PRINCIPAL_ID=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingApiIdentityPrincipalId.value -o tsv)
 
-# Deploy RBAC for resources after AAD propagation
+# 9. Deploy RBAC for resources after AAD propagation
 until az ad sp show --id ${VOTING_WEB_APP_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id ${VOTING_API_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id ${VOTING_COUNTER_FUNCTION_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-az deployment group create --resource-group $RGNAME --template-file templates/rbac.json \
+az deployment group create --resource-group $RGNAME --template-file templates/rbac.bicep \
     --parameters votingWebAppIdentityPrincipalId=$VOTING_WEB_APP_PRINCIPAL_ID votingCounterFunctionIdentityPrincipalId=$VOTING_COUNTER_FUNCTION_PRINCIPAL_ID \
                  keyVaultName=$KEYVAULT_NAME
 
-# Generates parameters file for appgw arm script
+# 10. Deploy App Gateway
 cat <<EOF > appgwApps.parameters.json
 [
   { 
     "name": "votapp", 
+    "routingPriority": 100,
     "hostName": "${APPGW_APP1_URL}", 
     "backendAddresses": [ 
       { 
@@ -114,6 +142,7 @@ cat <<EOF > appgwApps.parameters.json
   },
   { 
     "name": "testapp", 
+    "routingPriority": 101,
     "hostName": "${APPGW_APP2_URL}", 
     "backendAddresses": [ 
       { 
@@ -129,44 +158,24 @@ cat <<EOF > appgwApps.parameters.json
 ]
 EOF
 
-# 8. deploy the application gateway
-az deployment group create --resource-group $RGNAME --template-file templates/appgw.json --parameters vnetName=$VNET_NAME appgwSubnetAddressPrefix=$APPGW_PREFIX appgwApplications=@appgwApps.parameters.json
+az deployment group create --resource-group $RGNAME --template-file templates/appgw.bicep --parameters vnetName=$VNET_NAME subnetAddressWithPrefix=$APPGW_PREFIX appgwApplications=@appgwApps.parameters.json
 APPGW_PUBLIC_IP=$(az deployment group show -g $RGNAME -n appgw --query properties.outputs.appGwPublicIpAddress.value -o tsv)
 
-# Removes autogenerated parameter file
+# 10.1 Removes autogenerated parameter file
 rm appgwApps.parameters.json
 
+#11. Deploy private endpoints
+az deployment group create --resource-group $RGNAME --template-file templates/privateEndpoints.bicep --parameters SubId=$SUBID \
+    vnetName=$VNET_NAME subnetAddressPrefix=$SERVICES_PREFIX \
+    cosmosDBName=$COSMOSDB_NAME sqlName=$SQL_SERVER \
+    akvName=$KEYVAULT_NAME sbName=$SERVICEBUS_NAMESPACE_NAME 
 
-cat << EOF
 
-NEXT STEPS
----- -----
+#12. Run in Powershell - Add App Gateway certificate to the local machine - must use elevated permissions
+certutil -f -p $PFX_PASSWORD -importpfx appgw_std_1.pfx
+certutil -f -p $PFX_PASSWORD -importpfx appgw_std_2.pfx
 
-To finish setting up the managed identities as users in the Sql Database run the following script authenticated as the AAD Admin for the database server
-Instructions on create_sqlserver_msi_integration.md
+rm appgw_std_1.crt appgw_std_1.key appgw_std_1.pfx appgw_std_2.crt appgw_std_2.key appgw_std_2.pfx
 
-1)  Please, go to azure portal in the resource group: ${RGNAME} and click on **Azure Cosmos Db Account**
-a. then select **Firewall and virtual network**, there you can see:   
-**Add IP ranges to allow access from the internet or your on-premises networks**, so click on  
-**Add my current ip**, and finally save it.
-b. then select **cacheContainer** then click on **Items**. Click on **New Item**.
-
-Replace the whole json payload with below content and click **Save**
-
-{"id": "1", "Message": "Powered by Azure", "MessageType": "AD", "Url": "${RESOURCE_URL}"}
-
-c. then select **Firewall and virtual network**, and delete your public IP
-
-2) Map the Azure Application Gateway public ip address to the voting and test application domain names. To do that, please open `C:\windows\system32\drivers\etc\hosts` and add the following records in local host file:
-    ${APPGW_PUBLIC_IP} ${APPGW_APP1_URL}
-    ${APPGW_PUBLIC_IP} ${APPGW_APP2_URL}
-
-> Note: domains names are sent as a http request header. This way Azure Application Gateway know how to route the requests appropriately.
-
-3) RDP to ${JUMPBOX_PUBLIC_IP} and the deploy the testing app using the readme instruction
-     prepare_jumpbox.md
-     compile_and_deploy.md
-
-4) Browse to https://${APPGW_APP1_URL} and https://${APPGW_APP2_URL}
-
-EOF
+Add-Content "C:/windows/system32/drivers/etc/hosts" "$APPGW_PUBLIC_IP $APPGW_APP1_URL"
+Add-Content "C:/windows/system32/drivers/etc/hosts" "$APPGW_PUBLIC_IP $APPGW_APP2_URL"

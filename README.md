@@ -67,8 +67,8 @@ Then follow the steps for either standard or high availability deployments.
 ### For standard deployment
 
 ```
-chmod +x deploy_std.sh
-./deploy_std.sh
+chmod +x commands_std.azcli
+./commands_std.azcli
 ```
 
 ### For high availability deployment
@@ -80,7 +80,7 @@ chmod +x deploy_ha.sh
 
 ## Insert Document in Cosmos Db
 
-1. After deployment ends in the last step, run the following commands to get the resourceURl
+1. After deployment ends in the last step, run the following commands to get the resourceURL
 
 ```
 echo "{\"id\": \"1\", \"Message\": \"Powered by Azure\", \"MessageType\": \"AD\", \"Url\": \"${RESOURCE_URL}\"}"
@@ -103,21 +103,15 @@ The following snippet shows an example of the JSON response:
 
 - Go to Azure portal and open the resource group of deployment above. Click on **Azure Cosmos Db Account**, then select **Firewall and virtual network**, then delete your public ip.
 
-## Register domain by adding a record in hosts file [OPTIONAL]
-
-1. Go to Azure portal, open the the resource group of deployment above, and click on **AppGatewayIp**, then copy the IP Address value.
-2. Edit local host file.
-3. Add a new record using the IP read in step 1 above with the domain defined in APPGW_URL.
-
 ## Set up managed identities as users in the Sql Database
 
 [Create SQL server MSI Integration](./create_sqlserver_msi_integration.md).
 
 ## Publish Asp.net core Web, Api and Function applications
 
-1. [Prepare Jumpbox](./prepare_jumpbox.md).
+1. [Prepare Jumpbox and Github Actions](./prepare_jumpbox.md).
 
-2. [Compile and Deploy Applications](./compile_and_deploy.md).
+2. Run Github Actions to Deploy Web Apps
 
 3. At this point you should be able to test the application:  
    8.1 For standard deployment, open: https://votingapp-std.contoso.com.  
