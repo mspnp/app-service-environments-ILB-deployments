@@ -75,7 +75,7 @@ JUMPBOX_SUBNET_NAME=$(az deployment group show -g $RGNAME -n jumpbox --query pro
 ALLOWED_SUBNET_NAMES=${ASE_SUBNET_NAME},${JUMPBOX_SUBNET_NAME}
 az deployment group create --resource-group $RGNAME --template-file templates/services.bicep \
     --parameters vnetName=$VNET_NAME allowedSubnetNames=$ALLOWED_SUBNET_NAMES \
-                 sqlAdminUserName=$SQLADMINUSER sqlAdminPassword=$SQLADMINPASSWORD sqlAadAdminSid=$ADMIN_USER_ID \
+                 sqlAdminUserName=$SQLADMINUSER sqlAdminPassword=$SQLADMINPASSWORD sqlEntraIdAdminSid=$ADMIN_USER_ID \
                  zoneRedundant=true
 COSMOSDB_NAME=$(az deployment group show -g $RGNAME -n services --query properties.outputs.cosmosDbName.value -o tsv)
 SQL_SERVER=$(az deployment group show -g $RGNAME -n services --query properties.outputs.sqlServerName.value -o tsv)
@@ -103,10 +103,10 @@ VOTING_COUNTER_FUNCTION_PRINCIPAL_ID=$(az deployment group show -g $RGNAME -n si
 VOTING_API_NAME=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingApiName.value -o tsv) && \
 VOTING_API_PRINCIPAL_ID=$(az deployment group show -g $RGNAME -n sites --query properties.outputs.votingApiIdentityPrincipalId.value -o tsv)
 
-# 9. Deploy RBAC for resources after AAD propagation
-until az ad sp show --id ${VOTING_WEB_APP_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-until az ad sp show --id ${VOTING_API_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-until az ad sp show --id ${VOTING_COUNTER_FUNCTION_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+# 9. Deploy RBAC for resources after Microsoft Entra ID propagation
+until az ad sp show --id ${VOTING_WEB_APP_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for Microsoft Entra ID propagation" && sleep 5; done
+until az ad sp show --id ${VOTING_API_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for Microsoft Entra ID propagation" && sleep 5; done
+until az ad sp show --id ${VOTING_COUNTER_FUNCTION_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for Microsoft Entra ID propagation" && sleep 5; done
 az deployment group create --resource-group $RGNAME --template-file templates/rbac.bicep \
     --parameters votingWebAppIdentityPrincipalId=$VOTING_WEB_APP_PRINCIPAL_ID votingCounterFunctionIdentityPrincipalId=$VOTING_COUNTER_FUNCTION_PRINCIPAL_ID \
                  keyVaultName=$KEYVAULT_NAME
