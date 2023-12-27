@@ -11,8 +11,8 @@ param sqlAdminUserName string
 @secure()
 param sqlAdminPassword string
 
-@description('The SID for the AAD user to be the AD admin for the database server')
-param sqlAadAdminSid string
+@description('The SID for the Microsoft Entra ID user to be the admin for the database server')
+param sqlEntraIdAdminSid string
 
 @description('True for high availability deployments, False otherwise.')
 param zoneRedundant bool = false
@@ -138,14 +138,14 @@ resource sqlServerDatabase 'Microsoft.Sql/servers/databases@2022-02-01-preview' 
 }
 
 
-resource sqlServerActiveDirectory 'Microsoft.Sql/servers/administrators@2022-02-01-preview' = {
+resource sqlServerAdmin 'Microsoft.Sql/servers/administrators@2022-02-01-preview' = {
   parent: sqlServer
   name: 'activeDirectory'
   //location: location
   properties: {
     administratorType: 'ActiveDirectory'
     login: 'ADMIN'
-    sid: sqlAadAdminSid
+    sid: sqlEntraIdAdminSid
     tenantId: subscription().tenantId
   }
 }
