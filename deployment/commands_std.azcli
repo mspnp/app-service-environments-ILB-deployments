@@ -27,20 +27,6 @@ FIREWALL_PREFIX=10.0.200.0/24
 JUMPBOX_PREFIX=10.0.250.0/24
 SERVICES_PREFIX=10.0.50.0/24
 
-#Suhas params - delete before commits
-RGNAME=asev3-rg
-RGLOCATION=eastus
-SQLADMINUSER=suadmin
-SQLADMINPASSWORD=P@ssword1234
-JUMPBOX_USER=sujumpboxuser
-JUMPBOX_PASSWORD=P@ssword1234
-PFX_PASSWORD=P@ssword1234
-VNET_NAME=ASE-VNETaimoczwhjiepc
-INTERNAL_APP1_URL="kind-ocean-006539010.2.azurestaticapps.net"
-INTERNAL_APP2_URL="kind-ocean-006539010.2.azurestaticapps.net"
-az account set -n 'suhas-sub'
-
-
 # 0. Create self-signed SSL certificate
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP1_URL}" -out appgw_std_1.crt -keyout appgw_std_1.key
 openssl pkcs12 -export -out appgw_std_1.pfx -in appgw_std_1.crt -inkey appgw_std_1.key -passout pass:$PFX_PASSWORD
