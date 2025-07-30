@@ -8,7 +8,7 @@ param vnetName string
 param vnetRouteName string
 
 @description('The ip address prefix that ASE will use.')
-param aseSubnetAddressPrefix string
+param aseSubnetAddressPrefix string = '10.0.100.0/24'
 
 @description('Required. Dedicated host count of ASEv3.')
 param dedicatedHostCount int = 0

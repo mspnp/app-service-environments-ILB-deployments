@@ -1,9 +1,6 @@
 @description('The location in which the resources should be deployed.')
 param location string = resourceGroup().location
 
-@description('The vnet name where the gateway will be connected.')
-param vnetName string
-
 @description('The name for the sql server admin user.')
 param sqlAdminUserName string
 
@@ -16,9 +13,6 @@ param sqlEntraIdAdminSid string
 
 @description('True for high availability deployments, False otherwise.')
 param zoneRedundant bool = false
-
-@description('Comma separated subnet names that can access the services.')
-param allowedSubnetNames string
 
 var cosmosName = 'votingcosmos-${uniqueString(resourceGroup().id)}'
 var cosmosDatabaseName = 'cacheDB'
@@ -33,7 +27,6 @@ var serviceBusQueueName = 'votingqueue'
 var resourcesStorageAccountName = toLower('resources${uniqueString(resourceGroup().id)}')
 var resourcesContainerName = 'rscontainer'
 var keyVaultName = 'akeyvault1-${uniqueString(resourceGroup().id)}'
-var allowedSubnetNamesArray = split(allowedSubnetNames, ',')
  
 resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
   name: cosmosName

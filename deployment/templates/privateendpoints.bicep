@@ -22,7 +22,7 @@ param cosmosDBName string
 param akvName string
 
 @description('The ip address prefix that services subnet will use.')
-param subnetAddressPrefix string
+param subnetAddressPrefix string = '10.0.50.0/24'
 
 var servicesSubnetName = 'services-subnet-${uniqueString(resourceGroup().id)}'
 var servicesNSGName = '${vnetName}-SERVICES-NSG'

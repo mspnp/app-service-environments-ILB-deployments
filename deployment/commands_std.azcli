@@ -7,13 +7,13 @@ APPGW_APP1_URL=votingapp-std.contoso.com
 APPGW_APP2_URL=testapp-std.contoso.com
 
 #Parameters
-RGNAME=yourResourceGroupName
-RGLOCATION=yourLocation
-SQLADMINUSER=yoursqlAdminUser
-SQLADMINPASSWORD=yoursqlAdminPassword
-JUMPBOX_USER=yourJumpBoxUser
-JUMPBOX_PASSWORD=yourPassword
-PFX_PASSWORD=yourPassword
+RGNAME=rg-far-app-service-environments
+RGLOCATION=westus2
+SQLADMINUSER=faradmin
+SQLADMINPASSWORD=Frederic123!
+JUMPBOX_USER=faradmin
+JUMPBOX_PASSWORD=Frederic123!
+PFX_PASSWORD=Frederic123!
 ADMIN_USER_ID=$(az ad signed-in-user show --query id -o tsv)
 SUBID=$(az account show --query id -o tsv)
 

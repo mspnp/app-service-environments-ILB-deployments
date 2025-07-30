@@ -5,7 +5,7 @@ param location string = resourceGroup().location
 param vnetName string
 
 @description('The ip address prefix that gateway will use.')
-param subnetAddressWithPrefix string
+param subnetAddressWithPrefix string = '10.0.1.0/24'
 
 @description('List of applications to configure. Each element format is: { name, hostName, backendAddresses, certificate: { data, password }, probePath }')
 param appgwApplications array
@@ -31,7 +31,7 @@ var appgwSslCertificateName = '${appGatewayName}-ssl-'
 var appgwRouteRulesName = '${appGatewayName}-routerules-'
 var appgwAutoScaleMinCapacity = 0
 var appgwAutoScaleMaxCapacity = 10
-var appgwZonesArray = (empty(appgwZones) ? json('null') : split(appgwZones, ','))
+var appgwZonesArray = (empty(appgwZones) ? null : split(appgwZones, ','))
 
 resource publicIPAddress 'Microsoft.Network/publicIPAddresses@2022-05-01' = {
   name: appgwPublicIpAddressName

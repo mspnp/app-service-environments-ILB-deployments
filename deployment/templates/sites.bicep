@@ -5,7 +5,7 @@ param location string = resourceGroup().location
 param vnetName string
 
 @description('The ip address prefix REDIS will use.')
-param redisSubnetAddressPrefix string
+param redisSubnetAddressPrefix string = '10.0.2.0/24'
 
 @description('The ASE name where to host the applications')
 param aseName string

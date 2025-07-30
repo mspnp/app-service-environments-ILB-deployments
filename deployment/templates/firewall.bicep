@@ -3,7 +3,7 @@ param location string = resourceGroup().location
 param vnetName string
 
 @description('The ip prefix the firewall will use.')
-param firewallSubnetPrefix string
+param firewallSubnetPrefix string = '10.0.200.0/24'
 
 var firewallSubnetName = 'AzureFirewallSubnet'
 var firewallPublicIpName = 'firewallIp-${uniqueString(resourceGroup().id)}'

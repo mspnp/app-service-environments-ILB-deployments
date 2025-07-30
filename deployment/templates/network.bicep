@@ -2,16 +2,12 @@
 param location string = resourceGroup().location
 
 @description('The IP address prefix the network will use.')
-param vnetAddressPrefix string
+param vnetAddressPrefix string = '10.0.0.0/16'
 
-@description('The name of the vnet to use. Leave empty to create a new vnet.')
-param existentVnetName string = ''
-
-var mustCreateVNet = empty(existentVnetName)
-var vnetName = (empty(existentVnetName) ? 'ASE-VNET${uniqueString(resourceGroup().id)}' : existentVnetName)
+var vnetName = 'ASE-VNET${uniqueString(resourceGroup().id)}'
 var vnetRouteName = 'ASE-VNETRT${uniqueString(resourceGroup().id)}'
 
-resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' = if (mustCreateVNet) {
+resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' = {
   name: vnetName
   location: location
   tags: {

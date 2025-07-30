@@ -12,10 +12,18 @@ RDP into the jumpbox (you can get the IP using AzurePortal). The user and passwo
 2. Ensure it has the following software installed
    - Azure CLI
    - GIT
+```
+choco install git -y
+```
 
 # Set Up Github Actions Variables
 
-On the github repo, set up the following variables:
+1. Go to your repository on GitHub.
+2. Click on Settings.
+3. In the left sidebar, click Variables under the Secrets and variables section.
+4. Click Actions.
+5. Click New variable.
+6. Set up the following variables
 
 * FUNCTION_APPPATH - eg. "code/function-app-ri/FunctionApp"
 * BUILDCONFIGURATION - eg. "Release"

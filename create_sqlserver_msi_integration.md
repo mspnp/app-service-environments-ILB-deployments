@@ -4,9 +4,9 @@ RDP into the jumpbox (you can get the IP using Azure Portal). The user and passw
 
 ### Steps
 
-- Install [C++ Redistributable](https://support.microsoft.com/help/2977003/the-latest-supported-visual-c-download) - Download and install the latest supported Visual C++ downloads for x64.
+- Install [C++ Redistributable](https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist?view=msvc-170) - Download and install the latest supported Visual C++ downloads for x64.
 
-- Install [ODBC Driver 17 for SQL Server](https://www.microsoft.com/download/details.aspx?id=56567).
+- Install [ODBC Driver 18 for SQL Server](https://learn.microsoft.com/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver17).
 
 - Install [sqlcmd](https://docs.microsoft.com/sql/tools/sqlcmd-utility?view=sql-server-ver15#download-the-latest-version-of-sqlcmd-utility).
 
@@ -32,7 +32,12 @@ RDP into the jumpbox (you can get the IP using Azure Portal). The user and passw
 
     $SQL_TABLE_OBJECT = "IF OBJECT_ID('dbo.Counts', 'U') IS NULL CREATE TABLE Counts(ID INT NOT NULL IDENTITY PRIMARY KEY, Candidate VARCHAR(32) NOT NULL, Count INT);"
 
-    sqlcmd -S tcp:$SQL_SERVER.database.windows.net,1433 -d $SQL_DATABASE -N -l 30 -U $USER -G -Q $SQL_TABLE_OBJECT
+
+    $accessToken = az account get-access-token --resource https://database.windows.net --query accessToken -o tsv
+
+    $env:SQLCMDACCESSTOKEN = $accessToken
+
+    sqlcmd -S tcp:$SQL_SERVER.database.windows.net,1433 -d $SQL_DATABASE  -Q $SQL_TABLE_OBJECT -G
     ```
 
 - If you chose _standard_ deployment follow these steps to create the SQL command
@@ -58,7 +63,7 @@ RDP into the jumpbox (you can get the IP using Azure Portal). The user and passw
 - Create SQL Server MSI integration
 
     ```powershell
-    sqlcmd -S tcp:$SQL_SERVER.database.windows.net,1433 -d $SQL_DATABASE -N -l 30 -U $USER -G -Q $SQL
+    sqlcmd -S tcp:$SQL_SERVER.database.windows.net,1433 -d $SQL_DATABASE -N -l 30 -G -Q $SQL
     ```
 
 - [Return to README.md](./README.md#set-up-managed-identities-as-users-in-the-sql-database)
