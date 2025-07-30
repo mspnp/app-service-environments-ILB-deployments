@@ -1,6 +1,6 @@
 name: Build and Deploy Function App
-
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
