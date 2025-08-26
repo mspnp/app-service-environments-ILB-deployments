@@ -2,19 +2,16 @@
 
 These steps need to be excuted only once.
 
-RDP into the jumpbox (you can get the IP using AzurePortal). The user and password are the ones that you defined as environment variables at the begining.
+Connect the Jumpbox Virtual Machine through Azure Bastion in Azure Portal. Use the user and password that you defined as the environment variables (e.g., `$JUMPBOX_USER` and `$JUMPBOX_PASSWORD`) at the beginning.
 
 # Prerequisites to Run Github Actions Runner
 
-1. Ensure it supports long path names (>260 characters) by setting the GPO
-   - Go to Group Policy Editor
+1. Ensure it supports long path names (>260 characters) by setting the Group Policy Object (GPO)
+   - Open the Local Group Policy Editor (gpedit.msc)
    - Computer Configuration -> Administrative Templates -> System -> Filesystem -> Enable Win32 long paths
 2. Ensure it has the following software installed
-   - Azure CLI
-   - GIT
-```
-choco install git -y
-```
+   - Azure CLI (it was already installed on Create SQL Server MSI integration)
+   - Git
 
 # Set Up Github Actions Variables
 
@@ -35,8 +32,9 @@ choco install git -y
 
 # Set Up Github Actions Secret
 
-Obtain AZURE_CREDENTIALS for Github Runner - Copy the output of the following command and paste it in the Github Runner App Secret:
-```
+Obtain AZURE_CREDENTIALS for Github Runner - Copy the output of the following command and paste as secret:
+
+```bash
 az ad sp create-for-rbac --name "votingapp-service-principal" --role contributor \
                                 --scopes /subscriptions/$SUBID/resourceGroups/$RGNAME \
                                 --sdk-auth
@@ -47,9 +45,6 @@ az ad sp create-for-rbac --name "votingapp-service-principal" --role contributor
 1. Navigate to this Github Repository
 2. Go to settings
 3. Go to Actions > Runners
-4. Click on new Self Hosted Runner and follow the instructions on the jumpbox
-5. Run each workflow in the .github/workflows directory
-
-
+4. Click on new Self Hosted Runner and follow the instructions on the jumpbox amd keep the Agent Running
 
 [Return to README.md >](./README.md#publish-aspnet-core-web-api-and-function-applications)

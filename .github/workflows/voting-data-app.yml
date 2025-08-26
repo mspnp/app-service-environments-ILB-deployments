@@ -2,12 +2,6 @@ name: Build and Deploy VotingData App
 on:
   workflow_dispatch:
 
-  push:
-    branches:
-      - master
-    paths:
-      - 'code/web-app-ri/VotingData/**'
-
 jobs:
   build:
     runs-on: self-hosted

@@ -1,11 +1,6 @@
 name: Build and Deploy VotingWeb App
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
-    paths:
-      - 'code/web-app-ri/VotingWeb/**'
 
 jobs:
   build:
