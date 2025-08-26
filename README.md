@@ -261,40 +261,40 @@ App Service Environment must be always deployed in its own subnet in the enterpr
 
    ```bash
     # Note: This command will overwrite 'appgwApps.parameters.json' if it already exists.
-    cat << EOF > appgwApps.parameters.json
-    [
+cat <<EOF > appgwApps.parameters.json
+[
+  { 
+    "name": "votapp", 
+    "routingPriority": 100,
+    "hostName": "${APPGW_APP1_URL}", 
+    "backendAddresses": [ 
       { 
-        "name": "votapp", 
-        "routingPriority": 100,
-        "hostName": "${APPGW_APP1_URL}", 
-        "backendAddresses": [ 
-          { 
-            "fqdn": "${INTERNAL_APP1_URL}" 
-          } 
-        ], 
-        "certificate": { 
-          "data": "${CERT_DATA_1}", 
-          "password": "${PFX_PASSWORD}" 
-        }, 
-        "probePath": "/health" 
-      },
+        "fqdn": "${INTERNAL_APP1_URL}" 
+      } 
+    ], 
+    "certificate": { 
+      "data": "${CERT_DATA_1}", 
+      "password": "${PFX_PASSWORD}" 
+    }, 
+    "probePath": "/health" 
+  },
+  { 
+    "name": "testapp", 
+    "routingPriority": 101,
+    "hostName": "${APPGW_APP2_URL}", 
+    "backendAddresses": [ 
       { 
-        "name": "testapp", 
-        "routingPriority": 101,
-        "hostName": "${APPGW_APP2_URL}", 
-        "backendAddresses": [ 
-          { 
-            "fqdn": "${INTERNAL_APP2_URL}" 
-          } 
-        ], 
-        "certificate": { 
-          "data": "${CERT_DATA_2}", 
-          "password": "${PFX_PASSWORD}" 
-        }, 
-        "probePath": "/"
-      }
-    ]
-    EOF  
+        "fqdn": "${INTERNAL_APP2_URL}" 
+      } 
+    ], 
+    "certificate": { 
+      "data": "${CERT_DATA_2}", 
+      "password": "${PFX_PASSWORD}" 
+    }, 
+    "probePath": "/"
+  }
+]
+EOF
     
    # [This takes about ten minutes to run.]
    az deployment group create -g rg-app-service-environments-centralus --template-file templates/appgw.bicep --parameters vnetName=$VNET_NAME  appgwApplications=@appgwApps.parameters.json
