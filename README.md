@@ -73,12 +73,12 @@ App Service Environment must be always deployed in its own subnet in the enterpr
    * [Contributor role](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#contributor) is _required_ at the subscription level to have the ability to create resource groups and perform deployments.
    * [User Access Administrator role](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#user-access-administrator) is _required_ at the subscription level since you'll be performing role assignments.
 
-1. Clone/download this repo locally, or even better fork this repository.
+1. Fork this repository, then clone or download it locally.
 
-   > :twisted_rightwards_arrows: If you have forked this reference implementation repo, you'll be able to customize some of the files and commands for a more personalized and production-like experience; ensure references to this git repository mentioned throughout the walk-through are updated to use your own fork.
+   The fork will enable you to execute GitHub Actions.
 
    ```bash
-   git clone https://github.com/mspnp/app-service-environments-ILB-deployments.git
+   git clone https://github.com/<OWNER>/app-service-environments-ILB-deployments.git
    cd app-service-environments-ILB-deployments/deployment
    ```
    
