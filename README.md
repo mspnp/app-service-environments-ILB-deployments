@@ -1,6 +1,6 @@
 # App Service Environment Deployment
 
-This reference implementation shows how you can improve the resiliency of an ASE deployment by deploying in multiple availability zones. The standard deployment is also covered. For more information about this scenario, see the reference architecture: [Enterprise deployment using Azure App Service Environment](https://learn.microsoft.com/azure/architecture/web-apps/app-service-environment/architectures/ase-standard-deployment)
+This reference implementation shows how you can improve the resiliency of an ASE deployment by deploying in multiple availability zones. For more information about this scenario, see the reference architecture: [Enterprise deployment using Azure App Service Environment](https://learn.microsoft.com/azure/architecture/web-apps/app-service-environment/architectures/ase-standard-deployment)
 
 ![Architecture](./images/app-service-environment.png)
 
@@ -204,7 +204,7 @@ App Service Environment must be always deployed in its own subnet in the enterpr
     echo $KEYVAULT_NAME
     export RESOURCES_STORAGE_ACCOUNT=$(az deployment group show -g rg-app-service-environments-centralus -n services --query properties.outputs.resourcesStorageAccountName.value -o tsv)
     echo $RESOURCES_STORAGE_ACCOUNT
-    export RESOURCES_CONTAINER_NAME=$(az deployment group show --g rg-app-service-environments-centralus -n services --query properties.outputs.resourcesContainerName.value -o tsv)
+    export RESOURCES_CONTAINER_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n services --query properties.outputs.resourcesContainerName.value -o tsv)
     echo $RESOURCES_CONTAINER_NAME
     export SERVICEBUS_NAMESPACE_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n services --query properties.outputs.serviceBusName.value -o tsv)
     echo $SERVICEBUS_NAMESPACE_NAME
@@ -216,7 +216,7 @@ App Service Environment must be always deployed in its own subnet in the enterpr
    # [This takes less than one minute to run.]
     az storage blob upload -c $RESOURCES_CONTAINER_NAME -f Microsoft_Azure_logo_small.png -n Microsoft_Azure_logo_small.png --account-name $RESOURCES_STORAGE_ACCOUNT
 
-    export RESOURCE_URL="$(az storage account show -g $RGNAME -n $RESOURCES_STORAGE_ACCOUNT --query primaryEndpoints.blob -o tsv)$RESOURCES_CONTAINER_NAME/Microsoft_Azure_logo_small.png"
+    export RESOURCE_URL="$(az storage account show -g rg-app-service-environments-centralus -n $RESOURCES_STORAGE_ACCOUNT --query primaryEndpoints.blob -o tsv)$RESOURCES_CONTAINER_NAME/Microsoft_Azure_logo_small.png"
     echo $RESOURCE_URL
    ```
 
