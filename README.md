@@ -319,15 +319,16 @@ EOF
     certutil -f -p $PFX_PASSWORD -importpfx appgw_std_2.pfx
    ```
 
-### 15. Add lines in your Host file to resolve name
-    Open `C:/windows/system32/drivers/etc/hosts` file as administrator. Then, Add the following resulted lines at the end of the file.
+### 15. Add lines in your Host file to resolve name  
 
-    ```bash
-    # Run the following commands in your terminal to obtain the IP and hostname values:
-    echo $APPGW_PUBLIC_IP $APPGW_APP1_URL
-    echo $APPGW_PUBLIC_IP $APPGW_APP2_URL
+  Open `C:/windows/system32/drivers/etc/hosts` file as administrator. Then, Add the following resulted lines at the end of the file.
 
-    # Copy the output and manually add these lines to your hosts file (C:/windows/system32/drivers/etc/hosts) as administrator.
+   ```bash
+     # Run the following commands in your terminal to obtain the IP and hostname values:
+     echo $APPGW_PUBLIC_IP $APPGW_APP1_URL
+     echo $APPGW_PUBLIC_IP $APPGW_APP2_URL
+
+     # Copy the output and manually add these lines to your hosts file (C:/windows/system32/drivers/etc/hosts) as administrator.
    ```
 
 ## Insert Document in Cosmos Db
