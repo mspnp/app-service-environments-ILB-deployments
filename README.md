@@ -358,7 +358,53 @@ The following snippet shows an example of the JSON response:
 
 ## Set up managed identities as users in the Sql Database
 
-[Create SQL server MSI Integration](./create_sqlserver_msi_integration.md).
+### 1. Connect Query Editor
+    - Go to Azure Portal
+    - Go to the Azure SQL server
+    - On the networking, Selected Networks, and then Add Client IPv4. Save.
+    - Then Go to the Azure SQL Database
+    - Select Query Editor and Log In using Microsoft Entra authentication
+
+### 2. Execute the query
+
+       ```sql
+       IF OBJECT_ID('dbo.Counts', 'U') IS NULL 
+           CREATE TABLE Counts(
+               ID INT NOT NULL IDENTITY PRIMARY KEY, 
+               Candidate VARCHAR(32) NOT NULL, 
+               Count INT
+           );
+       ```
+
+### 3. SQL MSI Integration
+
+- If you chose _standard_ deployment follow these steps to create the SQL command
+
+    ```bash
+    export VOTING_COUNTER_FUNCTION_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n sites --query properties.outputs.votingFunctionName.value -o tsv)
+    export VOTING_API_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n sites --query properties.outputs.votingApiName.value -o tsv)
+
+    export SQL="CREATE USER [$VOTING_COUNTER_FUNCTION_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_COUNTER_FUNCTION_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_COUNTER_FUNCTION_NAME];CREATE USER [$VOTING_API_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_API_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_API_NAME];"
+
+    ```
+
+- If you chose high _availability_ deployment follow these steps to create the SQL command
+
+    ```bash
+    export VOTING_COUNTER_FUNCTION1_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n sites1 --query properties.outputs.votingFunctionName.value -o tsv)
+    export VOTING_COUNTER_FUNCTION2_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n sites2 --query properties.outputs.votingFunctionName.value -o tsv)
+    export VOTING_API1_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n sites1 --query properties.outputs.votingApiName.value -o tsv)
+    export VOTING_API2_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n sites2 --query properties.outputs.votingApiName.value -o tsv)
+
+    export SQL="CREATE USER [$VOTING_COUNTER_FUNCTION1_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_COUNTER_FUNCTION1_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_COUNTER_FUNCTION1_NAME];CREATE USER [$VOTING_API1_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_API1_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_API1_NAME];CREATE USER [$VOTING_COUNTER_FUNCTION2_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_COUNTER_FUNCTION2_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_COUNTER_FUNCTION2_NAME];CREATE USER [$VOTING_API2_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_API2_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_API2_NAME];"
+    ```
+   
+   - Create SQL Server MSI integration
+
+    ```bash
+     # Execute Script in Query Editor
+     echo $SQL
+    ```
 
 ## Publish ASP.NET Core Web, API, and Function Applications
 

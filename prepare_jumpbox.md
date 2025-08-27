@@ -10,8 +10,17 @@ Connect the Jumpbox Virtual Machine through Azure Bastion in Azure Portal. Use t
    - Open the Local Group Policy Editor (gpedit.msc)
    - Computer Configuration -> Administrative Templates -> System -> Filesystem -> Enable Win32 long paths
 2. Ensure it has the following software installed
-   - Azure CLI (it was already installed on Create SQL Server MSI integration)
-   - Git
+
+   - Azure CLI
+   Open Power Shell as administrator in order to install azure client and enable script execution.
+
+      ```powershell
+      Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi; Start-Process msiexec.exe -Wait -ArgumentList '/I AzureCLI.msi /quiet'; rm .\AzureCLI.msi
+
+      Set-ExecutionPolicy RemoteSigned
+      ```
+
+   - Git (https://git-scm.com/downloads)
 
 # Set Up Github Actions Variables
 
@@ -36,7 +45,7 @@ Obtain AZURE_CREDENTIALS for Github Runner - Copy the output of the following co
 
 ```bash
 az ad sp create-for-rbac --name "votingapp-service-principal" --role contributor \
-                                --scopes /subscriptions/$SUBID/resourceGroups/$RGNAME \
+                                --scopes /subscriptions/$SUBID/resourceGroups/rg-app-service-environments-centralus \
                                 --sdk-auth
 ```
 
@@ -45,6 +54,6 @@ az ad sp create-for-rbac --name "votingapp-service-principal" --role contributor
 1. Navigate to this Github Repository
 2. Go to settings
 3. Go to Actions > Runners
-4. Click on new Self Hosted Runner and follow the instructions on the jumpbox amd keep the Agent Running
+4. Click on new Self Hosted Runner and follow the instructions on the jumpbox. Keep the Agent Running. Execute the command in a new PowerShell console to take the latest environment variables related to the recently installed tools.
 
 [Return to README.md >](./README.md#publish-aspnet-core-web-api-and-function-applications)
