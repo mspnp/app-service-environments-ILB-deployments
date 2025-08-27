@@ -313,15 +313,21 @@ EOF
 ### 14. __Run in PowerShell__ - Add App Gateway certificate to the local machine - must use elevated permissions
 
    ```PowerShell
-    # Replace $PFX_PASSWORD, $APPGW_PUBLIC_IP, and $APPGW_APP1_URL with the value. That variables don't exist in PowerShell.
+    # Replace $PFX_PASSWORD with the value. That variables don't exist in PowerShell.
     
     certutil -f -p $PFX_PASSWORD -importpfx appgw_std_1.pfx
     certutil -f -p $PFX_PASSWORD -importpfx appgw_std_2.pfx
-    
-    rm appgw_std_1.crt appgw_std_1.key appgw_std_1.pfx appgw_std_2.crt appgw_std_2.key appgw_std_2.pfx
+   ```
 
-    Add-Content "C:/windows/system32/drivers/etc/hosts" "$APPGW_PUBLIC_IP $APPGW_APP1_URL"
-    Add-Content "C:/windows/system32/drivers/etc/hosts" "$APPGW_PUBLIC_IP $APPGW_APP2_URL"
+### 15. Add lines in your Host file to resolve name
+    Open `C:/windows/system32/drivers/etc/hosts` file as administrator. Then, Add the following resulted lines at the end of the file.
+
+    ```bash
+    # Run the following commands in your terminal to obtain the IP and hostname values:
+    echo $APPGW_PUBLIC_IP $APPGW_APP1_URL
+    echo $APPGW_PUBLIC_IP $APPGW_APP2_URL
+
+    # Copy the output and manually add these lines to your hosts file (C:/windows/system32/drivers/etc/hosts) as administrator.
    ```
 
 ## Insert Document in Cosmos Db
