@@ -315,6 +315,8 @@ EOF
    ```PowerShell
     # Replace $PFX_PASSWORD with the value. That variables don't exist in PowerShell.
     
+    cd .\app-service-environments-ILB-deployments\deployment\
+
     certutil -f -p $PFX_PASSWORD -importpfx appgw_std_1.pfx
     certutil -f -p $PFX_PASSWORD -importpfx appgw_std_2.pfx
    ```
@@ -367,14 +369,14 @@ The following snippet shows an example of the JSON response:
 
 ### 2. Execute the query
 
-       ```sql
-       IF OBJECT_ID('dbo.Counts', 'U') IS NULL 
-           CREATE TABLE Counts(
-               ID INT NOT NULL IDENTITY PRIMARY KEY, 
-               Candidate VARCHAR(32) NOT NULL, 
-               Count INT
-           );
-       ```
+```sql
+  IF OBJECT_ID('dbo.Counts', 'U') IS NULL 
+      CREATE TABLE Counts(
+          ID INT NOT NULL IDENTITY PRIMARY KEY, 
+          Candidate VARCHAR(32) NOT NULL, 
+          Count INT
+      );
+```
 
 ### 3. SQL MSI Integration
 
