@@ -1,10 +1,14 @@
 # App Service Environment Deployment
 
-This reference implementation shows how you can improve the resiliency of an ASE deployment by deploying in multiple availability zones. For more information about this scenario, see the reference architecture: [Enterprise deployment using Azure App Service Environment](https://learn.microsoft.com/azure/architecture/web-apps/app-service-environment/architectures/ase-standard-deployment)
+This reference implementation works on App Service Environment production deployments. The starting point is a standard deployment. For more information about this scenario, see the reference architecture: [Enterprise deployment using Azure App Service Environment](https://learn.microsoft.com/azure/architecture/web-apps/app-service-environment/architectures/ase-standard-deployment)
 
-![Architecture](./images/app-service-environment.png)
+![Standard deployment](./images/app-service-environment.png)
 
-You will walk through the deployment in a detailed manner to help you understand each component of this architecture. This guidance is meant to teach about each layer and provide you with the knowledge necessary to apply it to your workload.
+And there is a High Availability (HA) architecture that shows how to improve the resiliency of an ASE deployment by deploying in multiple availability zones. For more information about this scenario, see the reference architecture: [High availability enterprise deployment that uses App Service Environment](https://learn.microsoft.com/azure/architecture/web-apps/app-service-environment/architectures/app-service-environment-high-availability-deployment)
+
+![HA deployment](./images/app-service-environment-high-availability.svg)
+
+You will walk through the deployment in a detailed manner to help you understand each component of this architecture. This guidance is meant to teach about each layer and provide you with the knowledge necessary to apply it to your workload. We recommend starting with the standard option and then move to the HA path.
 
 ### Core architecture components
 
@@ -85,8 +89,8 @@ App Service Environment must be always deployed in its own subnet in the enterpr
 1. Set a variable for the App URL that will be used in the rest of this deployment.
 
    ```bash
-   export APPGW_APP1_URL=votingapp-std.contoso.com
-   export APPGW_APP2_URL=testapp-std.contoso.com
+   export APPGW_APP1_URL=votingapp.contoso.com
+   export APPGW_APP2_URL=testapp.contoso.com
    ```
 1. Run the following commands after providing values for the variables..
 
@@ -104,17 +108,17 @@ App Service Environment must be always deployed in its own subnet in the enterpr
 1. Generate a client-facing, self-signed TLS certificate
 
    ```bash
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP1_URL}" -out appgw_std_1.crt -keyout appgw_std_1.key
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP1_URL}" -out appgw_1.crt -keyout appgw_1.key
 
-    openssl pkcs12 -export -out appgw_std_1.pfx -in appgw_std_1.crt -inkey appgw_std_1.key -passout pass:$PFX_PASSWORD
+    openssl pkcs12 -export -out appgw_1.pfx -in appgw_1.crt -inkey appgw_1.key -passout pass:$PFX_PASSWORD
      # No matter if you used a certificate from your organization or you generated one from above, you'll need the certificate (as `.pfx`) to be Base64
-    export CERT_DATA_1=$(cat appgw_std_1.pfx | base64 | tr -d '\n' | tr -d '\r')
+    export CERT_DATA_1=$(cat appgw_1.pfx | base64 | tr -d '\n' | tr -d '\r')
 
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP2_URL}" -out appgw_std_2.crt -keyout appgw_std_2.key
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=${APPGW_APP2_URL}" -out appgw_2.crt -keyout appgw_2.key
 
-    openssl pkcs12 -export -out appgw_std_2.pfx -in appgw_std_2.crt -inkey appgw_std_2.key -passout pass:$PFX_PASSWORD
+    openssl pkcs12 -export -out appgw_2.pfx -in appgw_2.crt -inkey appgw_2.key -passout pass:$PFX_PASSWORD
      # No matter if you used a certificate from your organization or you generated one from above, you'll need the certificate (as `.pfx`) to be Base64
-    export CERT_DATA_2=$(cat appgw_std_2.pfx | base64 | tr -d '\n' | tr -d '\r')
+    export CERT_DATA_2=$(cat appgw_2.pfx | base64 | tr -d '\n' | tr -d '\r')
    ```
 
   > :book: As this is going to be a user-facing site, they purchase an EV cert from their CA. This will be served in front of the Azure Application Gateway.
@@ -146,7 +150,8 @@ App Service Environment must be always deployed in its own subnet in the enterpr
 
    ```bash
    # [This takes about ten minutes to run.]
-   az deployment group create -g rg-app-service-environments-centralus  --template-file templates/ase.bicep -n ase --parameters vnetName=$VNET_NAME vnetRouteName=$VNET_ROUTE_NAME
+   # For HA change zoneRedundant to true
+   az deployment group create -g rg-app-service-environments-centralus  --template-file templates/ase.bicep -n ase --parameters vnetName=$VNET_NAME vnetRouteName=$VNET_ROUTE_NAME zoneRedundant=false
 
    export ASE_DNS_SUFFIX=$(az deployment group show -g rg-app-service-environments-centralus  -n ase --query properties.outputs.dnsSuffix.value -o tsv)
    echo $ASE_DNS_SUFFIX
@@ -191,8 +196,10 @@ App Service Environment must be always deployed in its own subnet in the enterpr
 
    ```bash
    # [This takes about five minutes to run.]
+   # For HA change zoneRedundant to true
     az deployment group create -g rg-app-service-environments-centralus --template-file templates/services.bicep \
-        --parameters sqlAdminUserName=$SQLADMINUSER sqlAdminPassword=$SQLADMINPASSWORD sqlEntraIdAdminSid=$ADMIN_USER_ID
+        --parameters sqlAdminUserName=$SQLADMINUSER sqlAdminPassword=$SQLADMINPASSWORD sqlEntraIdAdminSid=$ADMIN_USER_ID  zoneRedundant=false
+
             
     export COSMOSDB_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n services --query properties.outputs.cosmosDbName.value -o tsv)
     echo $COSMOSDB_NAME
@@ -224,9 +231,10 @@ App Service Environment must be always deployed in its own subnet in the enterpr
 
    ```bash
    # [This takes about thirty minutes to run.]
+   # For HA change zoneRedundant to true
     az deployment group create -g rg-app-service-environments-centralus --template-file templates/sites.bicep -n sites --parameters aseName=$ASE_NAME \
     vnetName=$VNET_NAME cosmosDbName=$COSMOSDB_NAME sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME \
-    aseDnsSuffix=$ASE_DNS_SUFFIX
+    aseDnsSuffix=$ASE_DNS_SUFFIX  zoneRedundant=false
 	
     export INTERNAL_APP1_URL=$(az deployment group show -g rg-app-service-environments-centralus -n sites --query properties.outputs.votingAppUrl.value -o tsv) && \
     export INTERNAL_APP2_URL=$(az deployment group show -g rg-app-service-environments-centralus -n sites --query properties.outputs.testAppUrl.value -o tsv) && \
@@ -317,8 +325,8 @@ EOF
     
     cd .\app-service-environments-ILB-deployments\deployment\
 
-    certutil -f -p $PFX_PASSWORD -importpfx appgw_std_1.pfx
-    certutil -f -p $PFX_PASSWORD -importpfx appgw_std_2.pfx
+    certutil -f -p $PFX_PASSWORD -importpfx appgw_1.pfx
+    certutil -f -p $PFX_PASSWORD -importpfx appgw_2.pfx
    ```
 
 ### 15. Add lines in your Host file to resolve name  
@@ -380,25 +388,12 @@ The following snippet shows an example of the JSON response:
 
 ### 3. SQL MSI Integration
 
-- If you chose _standard_ deployment follow these steps to create the SQL command
-
     ```bash
     export VOTING_COUNTER_FUNCTION_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n sites --query properties.outputs.votingFunctionName.value -o tsv)
     export VOTING_API_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n sites --query properties.outputs.votingApiName.value -o tsv)
 
     export SQL="CREATE USER [$VOTING_COUNTER_FUNCTION_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_COUNTER_FUNCTION_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_COUNTER_FUNCTION_NAME];CREATE USER [$VOTING_API_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_API_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_API_NAME];"
 
-    ```
-
-- If you chose high _availability_ deployment follow these steps to create the SQL command
-
-    ```bash
-    export VOTING_COUNTER_FUNCTION1_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n sites1 --query properties.outputs.votingFunctionName.value -o tsv)
-    export VOTING_COUNTER_FUNCTION2_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n sites2 --query properties.outputs.votingFunctionName.value -o tsv)
-    export VOTING_API1_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n sites1 --query properties.outputs.votingApiName.value -o tsv)
-    export VOTING_API2_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n sites2 --query properties.outputs.votingApiName.value -o tsv)
-
-    export SQL="CREATE USER [$VOTING_COUNTER_FUNCTION1_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_COUNTER_FUNCTION1_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_COUNTER_FUNCTION1_NAME];CREATE USER [$VOTING_API1_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_API1_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_API1_NAME];CREATE USER [$VOTING_COUNTER_FUNCTION2_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_COUNTER_FUNCTION2_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_COUNTER_FUNCTION2_NAME];CREATE USER [$VOTING_API2_NAME] FROM EXTERNAL PROVIDER;ALTER ROLE db_datareader ADD MEMBER [$VOTING_API2_NAME];ALTER ROLE db_datawriter ADD MEMBER [$VOTING_API2_NAME];"
     ```
    
    - Create SQL Server MSI integration
@@ -420,12 +415,11 @@ The following snippet shows an example of the JSON response:
     - For the Voting API, run the workflow named `Build and Deploy VotingData App`.
     - For theFunction App, run the workflow named `Build and Deploy Function App`.
 3. At this point you should be able to test the application:  
-   3.1 For standard deployment, open: https://votingapp-std.contoso.com.  
-   3.2 For high availability deployment, open: https://votingapp-ha.contoso.com.
+    Open: https://votingapp.contoso.com.  
 
 _NOTE: You may see a certificate validation error in your browser because this deployment uses a self-signed certificate for demonstration purposes. In production environments, you should obtain and use a certificate from a trusted certificate authority (CA) to avoid these warnings and ensure secure connections._
 
-_NOTE: It could take some minutes to be available after the workflow finish to execute._
+_NOTE: It could take some minutes to be available after the workflow finishes executing. The web app can be tested from the Jumpbox VM using the app service URL. The App Gateway may take some time to detect the app as healthy._
 
 ![Web App](./images/WebApp.png)
 
