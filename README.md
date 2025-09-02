@@ -415,7 +415,7 @@ The following snippet shows an example of the JSON response:
     - For the Voting API, run the workflow named `Build and Deploy VotingData App`.
     - For theFunction App, run the workflow named `Build and Deploy Function App`.
 3. At this point you should be able to test the application:  
-    Open: https://votingapp.contoso.com.  
+    Open: https://votingapp.contoso.com  
 
 _NOTE: You may see a certificate validation error in your browser because this deployment uses a self-signed certificate for demonstration purposes. In production environments, you should obtain and use a certificate from a trusted certificate authority (CA) to avoid these warnings and ensure secure connections._
 

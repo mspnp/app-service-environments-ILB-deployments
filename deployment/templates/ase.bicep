@@ -25,7 +25,7 @@ var aseSubnetId = aseSubnet.id
 var aseLoadBalancingMode = 'Web, Publishing'
 
 
-resource aseNSG 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
+resource aseNSG 'Microsoft.Network/networkSecurityGroups@2024-07-01' = {
   name: aseNSGName
   location: location
   tags: {
@@ -68,7 +68,7 @@ resource aseNSG 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
   }
 }
 
-resource aseSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' = {
+resource aseSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' = {
   name: '${vnetName}/${aseSubnetName}'  
   properties: {
     addressPrefix: aseSubnetAddressPrefix
@@ -89,7 +89,7 @@ resource aseSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' = {
   }
 }
 
-resource ase 'Microsoft.Web/hostingEnvironments@2022-03-01' = {
+resource ase 'Microsoft.Web/hostingEnvironments@2024-11-01' = {
   name: aseName
   location: location
   kind: 'ASEV3'
