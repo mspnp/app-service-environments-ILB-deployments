@@ -25,6 +25,9 @@ param sqlServerName string
 @description('The name for the sql database')
 param sqlDatabaseName string
 
+@description('The name for the storage account')
+param storageAccountName string
+
 @description('The name for the log analytics workspace')
 param logAnalyticsWorkspace string = '${uniqueString(resourceGroup().id)}la'
 
@@ -334,16 +337,8 @@ resource testWebPlan 'Microsoft.Web/serverfarms@2024-11-01' = {
   }
 }
 
-resource votingStorage 'Microsoft.Storage/storageAccounts@2023-01-01' = {
-  name: 'stvotingfuncapp'
-  location: location
-  sku: {
-    name: 'Standard_LRS'
-  }
-  kind: 'StorageV2'
-  properties: {
-    accessTier: 'Hot'
-  }
+resource votingStorage 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
+  name: storageAccountName
 }
 
 resource votingFunction 'Microsoft.Web/sites@2024-11-01' = {

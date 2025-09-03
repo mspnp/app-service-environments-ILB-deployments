@@ -57,17 +57,5 @@ namespace VoteCounter
             public int Id { get; set; }
         }
 
-        //public async Task Run(
-        //    [ServiceBusTrigger("votingqueue", Connection = "SERVICEBUS_CONNECTION_STRING")]
-        //    ServiceBusReceivedMessage message,
-        //    ServiceBusMessageActions messageActions)
-        //{
-        //    _logger.LogInformation("Message ID: {id}", message.MessageId);
-        //    _logger.LogInformation("Message Body: {body}", message.Body);
-        //    _logger.LogInformation("Message Content-Type: {contentType}", message.ContentType);
-
-        //    // Complete the message
-        //    await messageActions.CompleteMessageAsync(message);
-        //}
     }
 }
