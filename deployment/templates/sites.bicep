@@ -356,11 +356,11 @@ resource votingFunction 'Microsoft.Web/sites@2024-11-01' = {
       appSettings: [
         {
           name: 'FUNCTIONS_EXTENSION_VERSION'
-          value: '~3'
+          value: '~4'
         }
         {
           name: 'FUNCTIONS_WORKER_RUNTIME'
-          value: 'dotnet'
+          value: 'otnet-isolated'
         }
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
