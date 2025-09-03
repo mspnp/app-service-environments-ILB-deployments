@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "VotingWeb": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:55020;http://localhost:55021"
+    }
+  }
+}
