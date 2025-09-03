@@ -385,7 +385,7 @@ resource votingFunction 'Microsoft.Web/sites@2024-11-01' = {
         }
         {
           name: 'AzureWebJobsStorage'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${votingStorage.listKeys().keys[0].value};EndpointSuffix=core.windows.net'
+          value: votingStorage.listKeys().keys[0].value
         }
       ]
     }
@@ -561,4 +561,3 @@ output votingFunctionName string = votingFunctionName
 output votingWebAppIdentityPrincipalId string = votingWebApp.identity.principalId
 output votingApiIdentityPrincipalId string = votingApiApp.identity.principalId
 output votingCounterFunctionIdentityPrincipalId string = votingFunction.identity.principalId
-
