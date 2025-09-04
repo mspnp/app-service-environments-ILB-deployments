@@ -401,12 +401,12 @@ resource votingApiApp 'Microsoft.Web/sites@2024-11-01' = {
   }
   properties: {
     enabled: true
-    //name: votingApiName_var
     hostingEnvironmentProfile: {
       id: aseId
     }
     serverFarmId: votingApiPlan.id
-    siteConfig: {
+      netFrameworkVersion: 'v9.0'
+      use32BitWorkerProcess: false
       appSettings: [
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
@@ -439,6 +439,8 @@ resource votingWebApp 'Microsoft.Web/sites@2024-11-01' = {
     }
     serverFarmId: votingWebPlan.id
     siteConfig: {
+      netFrameworkVersion: 'v9.0'
+      use32BitWorkerProcess: false
       appSettings: [
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
@@ -486,7 +488,6 @@ resource testWebApp 'Microsoft.Web/sites@2024-11-01' = {
   }
   properties: {
     enabled: true
-    //name: testWebName_var
     hostingEnvironmentProfile: {
       id: aseId
     }
