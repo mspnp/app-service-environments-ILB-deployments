@@ -385,7 +385,7 @@ resource votingFunction 'Microsoft.Web/sites@2024-11-01' = {
         }
         {
           name: 'AzureWebJobsStorage'
-          value: votingStorage.listKeys().keys[0].value
+          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${votingStorage.listKeys().keys[0].value};EndpointSuffix=core.windows.net'
         }
       ]
     }
