@@ -49,7 +49,7 @@ var testWebPlanName = '${testWebName}-plan'
 var votingFunctionPlanName = '${votingFunctionName}-plan'
 var aseId = resourceId('Microsoft.Web/hostingEnvironments', aseName)
 
-resource redisNSG 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
+resource redisNSG 'Microsoft.Network/networkSecurityGroups@2024-07-01' = {
   name: redisNSGName
   location: location
   tags: {
@@ -159,7 +159,7 @@ resource redisNSG 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
   }
 }
 
-resource redisSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
+resource redisSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' = {
   name: '${vnetName}/${redisSubnetName}'
   //location: location
   properties: {
@@ -170,7 +170,7 @@ resource redisSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
   }
 }
 
-resource redis 'Microsoft.Cache/Redis@2022-06-01' = {
+resource redis 'Microsoft.Cache/Redis@2024-11-01' = {
   name: redisName
   location: location
   zones: (zoneRedundant ? ['1','2','3'] : null)
@@ -186,12 +186,12 @@ resource redis 'Microsoft.Cache/Redis@2022-06-01' = {
 }
 
 
-resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
+resource keyVault 'Microsoft.KeyVault/vaults@2024-11-01' existing = {
   name: keyVaultName
 }
 
 
-resource keyVaultRedisSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+resource keyVaultRedisSecret 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
   parent: keyVault
   name: redisSecretName
   properties: {
@@ -199,7 +199,7 @@ resource keyVaultRedisSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   }
 }
 
-resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2025-02-01' = {
   name: logAnalyticsWorkspace
   location: location  
 }
@@ -253,7 +253,7 @@ resource testWeb 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource votingFunctionPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
+resource votingFunctionPlan 'Microsoft.Web/serverfarms@2024-11-01' = {
   name: votingFunctionPlanName
   location: location
   sku: {
@@ -274,7 +274,7 @@ resource votingFunctionPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   }
 }
 
-resource votingApiPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
+resource votingApiPlan 'Microsoft.Web/serverfarms@2024-11-01' = {
   name: votingApiPlanName
   location: location
   sku: {
@@ -295,7 +295,7 @@ resource votingApiPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   }
 }
 
-resource votingWebPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
+resource votingWebPlan 'Microsoft.Web/serverfarms@2024-11-01' = {
   name: votingWebPlanName
   location: location
   sku: {
@@ -316,7 +316,7 @@ resource votingWebPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   }
 }
 
-resource testWebPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
+resource testWebPlan 'Microsoft.Web/serverfarms@2024-11-01' = {
   name: testWebPlanName
   location: location
   sku: {
@@ -337,7 +337,7 @@ resource testWebPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   }
 }
 
-resource votingFunction 'Microsoft.Web/sites@2022-03-01' = {
+resource votingFunction 'Microsoft.Web/sites@2024-11-01' = {
   name: votingFunctionName
   location: location
   kind: 'functionapp'
@@ -364,11 +364,11 @@ resource votingFunction 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: reference(votingFunctionAppInsights.id, '2020-02-02').InstrumentationKey
+          value: votingFunctionAppInsights.properties.InstrumentationKey
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: 'InstrumentationKey=${reference(votingFunctionAppInsights.id, '2020-02-02').InstrumentationKey}'
+          value: 'InstrumentationKey=${votingFunctionAppInsights.properties.InstrumentationKey}'
         }
         {
           name: 'SERVICEBUS_CONNECTION_STRING'
@@ -383,7 +383,7 @@ resource votingFunction 'Microsoft.Web/sites@2022-03-01' = {
   }
 }
 
-resource votingApiApp 'Microsoft.Web/sites@2022-03-01' = {
+resource votingApiApp 'Microsoft.Web/sites@2024-11-01' = {
   name: votingApiName
   location: location
   kind: 'app'
@@ -401,11 +401,11 @@ resource votingApiApp 'Microsoft.Web/sites@2022-03-01' = {
       appSettings: [
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: reference(votingApi.id, '2020-02-02').InstrumentationKey
+          value: votingApi.properties.InstrumentationKey
         }
         {
           name: 'ApplicationInsights:InstrumentationKey'
-          value: reference(votingApi.id, '2020-02-02').InstrumentationKey
+          value: votingApi.properties.InstrumentationKey
         }
         {
           name: 'ConnectionStrings:SqlDbConnection'
@@ -416,7 +416,7 @@ resource votingApiApp 'Microsoft.Web/sites@2022-03-01' = {
   }
 }
 
-resource votingWebApp 'Microsoft.Web/sites@2022-03-01' = {
+resource votingWebApp 'Microsoft.Web/sites@2024-11-01' = {
   name: votingWebName
   location: location
   kind: 'app'
@@ -433,7 +433,7 @@ resource votingWebApp 'Microsoft.Web/sites@2022-03-01' = {
       appSettings: [
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: reference(votingWeb.id, '2020-02-02').InstrumentationKey
+          value: votingWeb.properties.InstrumentationKey
         }
         {
           name: 'ConnectionStrings:sbConnectionString'
@@ -446,7 +446,7 @@ resource votingWebApp 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'ApplicationInsights:InstrumentationKey'
-          value: reference(votingWeb.id, '2020-02-02').InstrumentationKey
+          value: votingWeb.properties.InstrumentationKey
         }
         {
           name: 'ConnectionStrings:RedisConnectionString'
@@ -469,7 +469,7 @@ resource votingWebApp 'Microsoft.Web/sites@2022-03-01' = {
   }
 }
 
-resource testWebApp 'Microsoft.Web/sites@2022-03-01' = {
+resource testWebApp 'Microsoft.Web/sites@2024-11-01' = {
   name: testWebName
   location: location
   kind: 'app'
@@ -487,18 +487,18 @@ resource testWebApp 'Microsoft.Web/sites@2022-03-01' = {
       appSettings: [
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: reference(testWeb.id, '2020-02-02').InstrumentationKey
+          value: testWeb.properties.InstrumentationKey
         }
         {
           name: 'ApplicationInsights:InstrumentationKey'
-          value: reference(testWeb.id, '2020-02-02').InstrumentationKey
+          value: testWeb.properties.InstrumentationKey
         }
       ]
     }
   }
 }
 
-resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2022-07-01' = {
+resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2024-11-01' = {
   parent: keyVault
   name: 'add'
   properties: {

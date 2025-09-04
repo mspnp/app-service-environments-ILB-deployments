@@ -7,7 +7,7 @@ param vnetAddressPrefix string = '10.0.0.0/16'
 var vnetName = 'ASE-VNET${uniqueString(resourceGroup().id)}'
 var vnetRouteName = 'ASE-VNETRT${uniqueString(resourceGroup().id)}'
 
-resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' = {
+resource vnet 'Microsoft.Network/virtualNetworks@2024-07-01' = {
   name: vnetName
   location: location
   tags: {
@@ -22,7 +22,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' = {
   }
 }
 
-resource vnetRoute 'Microsoft.Network/routeTables@2022-01-01' = {
+resource vnetRoute 'Microsoft.Network/routeTables@2024-07-01' = {
   name: vnetRouteName
   location: location
   tags: {
