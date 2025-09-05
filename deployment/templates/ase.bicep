@@ -72,6 +72,7 @@ resource aseSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' = {
   name: '${vnetName}/${aseSubnetName}'  
   properties: {
     addressPrefix: aseSubnetAddressPrefix
+    defaultOutboundAccess: false
     networkSecurityGroup: {
       id: aseNSG.id
     }

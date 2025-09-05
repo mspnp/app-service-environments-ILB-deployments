@@ -57,6 +57,7 @@ resource servicesSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' =
   name: '${vnetName}/${servicesSubnetName}'
   properties: {
     addressPrefix: subnetAddressPrefix
+    defaultOutboundAccess: false
     networkSecurityGroup: {
       id: servicesNSG.id
     }

@@ -164,9 +164,9 @@ resource redisNSG 'Microsoft.Network/networkSecurityGroups@2024-07-01' = {
 
 resource redisSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' = {
   name: '${vnetName}/${redisSubnetName}'
-  //location: location
   properties: {
     addressPrefix: redisSubnetAddressPrefix
+    defaultOutboundAccess: false
     networkSecurityGroup: {
       id: redisNSG.id
     }
@@ -405,6 +405,7 @@ resource votingApiApp 'Microsoft.Web/sites@2024-11-01' = {
       id: aseId
     }
     serverFarmId: votingApiPlan.id
+    siteConfig: {
       netFrameworkVersion: 'v9.0'
       use32BitWorkerProcess: false
       appSettings: [

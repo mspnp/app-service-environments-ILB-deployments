@@ -13,6 +13,7 @@ resource firewallSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' =
   name: '${vnetName}/${firewallSubnetName}'
   properties: {
     addressPrefix: firewallSubnetPrefix
+    defaultOutboundAccess: false
     serviceEndpoints: [
       {
         service: 'Microsoft.AzureCosmosDB'
