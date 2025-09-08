@@ -2,6 +2,10 @@ name: Build and Deploy Function App
 on:
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build:
     runs-on: self-hosted
