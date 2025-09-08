@@ -2,9 +2,6 @@ name: Build and Deploy Function App
 on:
   workflow_dispatch:
 
-permissions:
-  id-token: write
-  contents: read
 
 jobs:
   build:
@@ -37,6 +34,9 @@ jobs:
           path: ${{ github.workspace }}/VoteCounter
 
   deploy:
+    permissions:
+      id-token: write
+      contents: read
     needs: build
     runs-on: self-hosted
     environment: 'production'
