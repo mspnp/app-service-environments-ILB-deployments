@@ -36,7 +36,6 @@ jobs:
   deploy:
     permissions:
       id-token: write
-      contents: read
     needs: build
     runs-on: self-hosted
     environment: 'production'
