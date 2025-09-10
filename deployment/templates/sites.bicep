@@ -461,7 +461,7 @@ resource votingWebApp 'Microsoft.Web/sites@2024-11-01' = {
         }
         {
           name: 'ConnectionStrings:sbNamespace'
-          value: serviceBusNamespace
+          value: 'https://${serviceBusNamespace}.servicebus.windows.net/'
         }
         {
           name: 'ConnectionStrings:VotingDataAPIBaseUri'
