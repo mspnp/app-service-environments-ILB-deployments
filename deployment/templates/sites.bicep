@@ -19,6 +19,9 @@ param keyVaultName string
 @description('The cosmos DB name')
 param cosmosDbName string
 
+@description('The namespace for the service bus')
+param serviceBusNamespace string
+
 @description('The name for the sql server')
 param sqlServerName string
 
@@ -41,7 +44,6 @@ var redisNSGName = '${vnetName}-REDIS-NSG'
 var redisSecretName = 'RedisConnectionString'
 var cosmosKeySecretName = 'CosmosKey'
 var serviceBusListenerConnectionStringSecretName = 'ServiceBusListenerConnectionString'
-var serviceBusSenderConnectionStringSecretName = 'ServiceBusSenderConnectionString'
 var votingApiName = 'votingapiapp-${uniqueString(resourceGroup().id)}'
 var votingWebName = 'votingwebapp-${uniqueString(resourceGroup().id)}'
 var testWebName = 'testwebapp-${uniqueString(resourceGroup().id)}'
@@ -51,6 +53,16 @@ var votingWebPlanName = '${votingWebName}-plan'
 var testWebPlanName = '${testWebName}-plan'
 var votingFunctionPlanName = '${votingFunctionName}-plan'
 var aseId = resourceId('Microsoft.Web/hostingEnvironments', aseName)
+
+var azureServiceBusDataSenderRole = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  '69a216fc-b8fb-44d8-bc22-1f3c2cd27a39'
+) // Azure Service Bus Data Sender
+
+
+resource serviceBus 'Microsoft.ServiceBus/namespaces@2025-05-01-preview' existing= {
+  name: serviceBusNamespace
+}
 
 resource redisNSG 'Microsoft.Network/networkSecurityGroups@2024-07-01' = {
   name: redisNSGName
@@ -448,8 +460,8 @@ resource votingWebApp 'Microsoft.Web/sites@2024-11-01' = {
           value: votingWeb.properties.InstrumentationKey
         }
         {
-          name: 'ConnectionStrings:sbConnectionString'
-          value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/${serviceBusSenderConnectionStringSecretName})'
+          name: 'ConnectionStrings:sbNamespace'
+          value: serviceBusNamespace
         }
         {
           name: 'ConnectionStrings:VotingDataAPIBaseUri'
@@ -477,6 +489,16 @@ resource votingWebApp 'Microsoft.Web/sites@2024-11-01' = {
         }
       ]
     }
+  }
+}
+
+resource serviceBusSenderRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(votingWebApp.name, serviceBus.id, 'Azure Service Bus Data Sender')
+  scope: serviceBus
+  properties: {
+    roleDefinitionId:azureServiceBusDataSenderRole
+    principalId: votingWebApp.identity.principalId
+    principalType: 'ServicePrincipal'
   }
 }
 

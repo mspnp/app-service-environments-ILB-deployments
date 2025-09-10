@@ -10,6 +10,10 @@ param githubRepo string = 'app-service-environments-ILB-deployments'
 @description('The GitHub environment to restrict the OIDC token to.')
 param githubEnvironment string = 'production'
 
+var contributorRole = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  'b24988ac-6180-42a0-ab88-20f7382dd24c'
+) // Contributor
 
 @description('The user-assigned managed identity for GitHub Actions.')
 resource userIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' = {
@@ -19,10 +23,10 @@ resource userIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-
 
 @description('The role assignment for the user-assigned managed identity.')
 resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(userIdentity.id, 'Contributor')
+  name: guid(userIdentity.id, resourceGroup().id, 'Contributor')
   scope: resourceGroup()
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c') // Contributor
+    roleDefinitionId: contributorRole
     principalId: userIdentity.properties.principalId
     principalType: 'ServicePrincipal'
   }

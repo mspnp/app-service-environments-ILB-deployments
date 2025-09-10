@@ -233,7 +233,7 @@ App Service Environment must always be deployed in its own subnet in the enterpr
    # [This takes about thirty minutes to run.]
    # For HA change zoneRedundant to true
     az deployment group create -g rg-app-service-environments-centralus --template-file templates/sites.bicep -n sites --parameters aseName=$ASE_NAME \
-    vnetName=$VNET_NAME cosmosDbName=$COSMOSDB_NAME sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME storageAccountName=$RESOURCES_STORAGE_ACCOUNT\
+    vnetName=$VNET_NAME cosmosDbName=$COSMOSDB_NAME sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME serviceBusNamespace=$SERVICEBUS_NAMESPACE_NAME  storageAccountName=$RESOURCES_STORAGE_ACCOUNT\
     aseDnsSuffix=$ASE_DNS_SUFFIX  zoneRedundant=false
 	
     export INTERNAL_APP1_URL=$(az deployment group show -g rg-app-service-environments-centralus -n sites --query properties.outputs.votingAppUrl.value -o tsv) && \
@@ -441,7 +441,7 @@ Most of the Azure resources deployed in the prior steps will incur ongoing charg
    > Because this reference implementation enables soft delete on Key Vault, execute a purge so your next deployment of this implementation doesn't run into a naming conflict.
 
    ```bash
-   az keyvault purge -n $KEYVAULT_NAME
+   az keyvault purge -n $KEYVAULT_NAME 
    ```
 
 1. If any temporary changes were made to Entra ID or Azure RBAC permissions consider removing those as well.

@@ -173,14 +173,6 @@ resource keyVaultServiceBusListenerConnectionString 'Microsoft.KeyVault/vaults/s
   }
 }
 
-resource keyVaultServiceBusSenderConnectionString 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
-  parent: keyVault
-  name: 'ServiceBusSenderConnectionString'
-  properties: {
-    value: 'Endpoint=sb://${serviceBusName}.servicebus.windows.net/;SharedAccessKeyName=${serviceBusSenderSharedAccessKey.name};SharedAccessKey=${listKeys(serviceBusSenderSharedAccessKey.id, '2021-11-01').primaryKey}'
-  }
-}
-
 resource serviceBus 'Microsoft.ServiceBus/namespaces@2025-05-01-preview' = {
   name: serviceBusName
   location: location

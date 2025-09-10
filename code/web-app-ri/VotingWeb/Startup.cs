@@ -5,6 +5,8 @@
 
 using System;
 using System.Net.Mime;
+using Azure.Identity;
+using Azure.Messaging.ServiceBus;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -38,10 +40,14 @@ namespace VotingWeb
 
             services.AddControllersWithViews();
 
-            services.AddSingleton<IVoteQueueClient>(s =>
-                new VoteQueueClient(
-                    Configuration.GetValue<string>("ConnectionStrings:sbConnectionString"),
-                    Configuration.GetValue<string>("ConnectionStrings:queueName")));
+
+            services.AddSingleton(sp =>
+            {
+                var credential = new DefaultAzureCredential();
+                return new ServiceBusClient(Configuration.GetValue<string>("ConnectionStrings:sbNamespace"), credential);
+            });
+
+            services.AddSingleton<IVoteQueueClient, VoteQueueClient>();
 
             services.AddSingleton<IAdRepository>(s =>
                 new AdRepository(
