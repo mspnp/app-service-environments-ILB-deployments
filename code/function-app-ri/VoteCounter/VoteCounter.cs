@@ -1,4 +1,3 @@
-using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Data.SqlClient;
@@ -20,7 +19,7 @@ namespace VoteCounter
 
         [Function(nameof(VoteCounter))]
         public async Task Run(
-            [ServiceBusTrigger("votingqueue", Connection = "SERVICEBUS_CONNECTION_STRING")] string myQueueItem,
+            [ServiceBusTrigger("votingqueue", Connection = "ServiceBusConnection")] string myQueueItem,
             FunctionContext context)
         {
             var vote = JsonSerializer.Deserialize<Vote>(myQueueItem);

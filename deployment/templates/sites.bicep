@@ -59,8 +59,12 @@ var azureServiceBusDataSenderRole = subscriptionResourceId(
   '69a216fc-b8fb-44d8-bc22-1f3c2cd27a39'
 ) // Azure Service Bus Data Sender
 
+var azureServiceBusDataReceiverRole = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  '4f6d3b9b-027b-4f4c-9142-0e5a2a2247e0'
+) //Azure Service Bus Data Receiver
 
-resource serviceBus 'Microsoft.ServiceBus/namespaces@2025-05-01-preview' existing= {
+resource serviceBus 'Microsoft.ServiceBus/namespaces@2025-05-01-preview' existing = {
   name: serviceBusNamespace
 }
 
@@ -388,8 +392,8 @@ resource votingFunction 'Microsoft.Web/sites@2024-11-01' = {
           value: 'InstrumentationKey=${votingFunctionAppInsights.properties.InstrumentationKey}'
         }
         {
-          name: 'SERVICEBUS_CONNECTION_STRING'
-          value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/${serviceBusListenerConnectionStringSecretName})'
+          name: 'ServiceBusConnection__fullyQualifiedNamespace'
+          value: '${serviceBusNamespace}.servicebus.windows.net'
         }
         {
           name: 'sqldb_connection'
@@ -401,6 +405,16 @@ resource votingFunction 'Microsoft.Web/sites@2024-11-01' = {
         }
       ]
     }
+  }
+}
+
+resource serviceBusDataReceiverRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(votingWebApp.name, serviceBus.id, 'Azure Service Bus Data Receiver')
+  scope: serviceBus
+  properties: {
+    roleDefinitionId: azureServiceBusDataReceiverRole
+    principalId: votingFunction.identity.principalId
+    principalType: 'ServicePrincipal'
   }
 }
 
@@ -496,7 +510,7 @@ resource serviceBusSenderRoleAssignment 'Microsoft.Authorization/roleAssignments
   name: guid(votingWebApp.name, serviceBus.id, 'Azure Service Bus Data Sender')
   scope: serviceBus
   properties: {
-    roleDefinitionId:azureServiceBusDataSenderRole
+    roleDefinitionId: azureServiceBusDataSenderRole
     principalId: votingWebApp.identity.principalId
     principalType: 'ServicePrincipal'
   }
