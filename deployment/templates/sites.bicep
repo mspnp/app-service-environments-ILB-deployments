@@ -67,6 +67,9 @@ var cosmosDBAccountReaderRole = subscriptionResourceId(
   'fbdf93bf-df7d-467e-a4d2-9458aa1360c8'
 ) //Cosmos DB Account Reader
 
+resource cosmosDatabaseAccount 'Microsoft.DocumentDB/databaseAccounts@2025-04-15' existing = {
+  name: cosmosDbName
+}
 resource serviceBus 'Microsoft.ServiceBus/namespaces@2025-05-01-preview' existing = {
   name: serviceBusNamespace
 }
@@ -512,6 +515,17 @@ resource serviceBusSenderRoleAssignment 'Microsoft.Authorization/roleAssignments
     roleDefinitionId: azureServiceBusDataSenderRole
     principalId: votingWebApp.identity.principalId
     principalType: 'ServicePrincipal'
+  }
+}
+
+// Assign Role to allow Read data from cosmos DB
+resource cosmosDBDataReaderRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = {
+  name: guid(resourceGroup().id, cosmosDatabaseAccount.id, 'cosmosDBDataReaderRoleV2')
+  parent: cosmosDatabaseAccount
+  properties: {
+    principalId: votingWebApp.identity.principalId
+    roleDefinitionId: '/${subscription().id}/resourceGroups/${resourceGroup().name}/providers/Microsoft.DocumentDB/databaseAccounts/${cosmosDatabaseAccount.name}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000001'
+    scope: cosmosDatabaseAccount.id
   }
 }
 
