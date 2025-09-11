@@ -413,7 +413,7 @@ The following snippet shows an example of the JSON response:
   * For each app, run the corresponding workflow from the master branch:
     - For the Voting Web App, run the workflow named `Build and Deploy VotingWeb App`.
     - For the Voting API, run the workflow named `Build and Deploy VotingData App`.
-    - For theFunction App, run the workflow named `Build and Deploy Function App`.
+    - For the Function App, run the workflow named `Build and Deploy Function App`.
 3. At this point you should be able to test the application:  
     Open: https://votingapp.contoso.com  
 
