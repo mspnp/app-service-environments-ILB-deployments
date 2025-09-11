@@ -42,8 +42,6 @@ var redisSubnetName = 'redis-subnet-${uniqueString(resourceGroup().id)}'
 var redisSubnetId = redisSubnet.id
 var redisNSGName = '${vnetName}-REDIS-NSG'
 var redisSecretName = 'RedisConnectionString'
-var cosmosKeySecretName = 'CosmosKey'
-var serviceBusListenerConnectionStringSecretName = 'ServiceBusListenerConnectionString'
 var votingApiName = 'votingapiapp-${uniqueString(resourceGroup().id)}'
 var votingWebName = 'votingwebapp-${uniqueString(resourceGroup().id)}'
 var testWebName = 'testwebapp-${uniqueString(resourceGroup().id)}'
@@ -63,6 +61,11 @@ var azureServiceBusDataReceiverRole = subscriptionResourceId(
   'Microsoft.Authorization/roleDefinitions',
   '4f6d3b9b-027b-4f4c-9142-0e5a2a2247e0'
 ) //Azure Service Bus Data Receiver
+
+var cosmosDBAccountReaderRole = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  'fbdf93bf-df7d-467e-a4d2-9458aa1360c8'
+) //Cosmos DB Account Reader
 
 resource serviceBus 'Microsoft.ServiceBus/namespaces@2025-05-01-preview' existing = {
   name: serviceBusNamespace
@@ -497,10 +500,6 @@ resource votingWebApp 'Microsoft.Web/sites@2024-11-01' = {
           name: 'ConnectionStrings:CosmosUri'
           value: 'https://${cosmosDbName}.documents.azure.com:443/'
         }
-        {
-          name: 'ConnectionStrings:CosmosKey'
-          value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/${cosmosKeySecretName})'
-        }
       ]
     }
   }
@@ -511,6 +510,16 @@ resource serviceBusSenderRoleAssignment 'Microsoft.Authorization/roleAssignments
   scope: serviceBus
   properties: {
     roleDefinitionId: azureServiceBusDataSenderRole
+    principalId: votingWebApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource  cosmosDBAccountReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(votingWebApp.name, serviceBus.id, 'Cosmos DB Account Reader')
+  scope: serviceBus
+  properties: {
+    roleDefinitionId: cosmosDBAccountReaderRole
     principalId: votingWebApp.identity.principalId
     principalType: 'ServicePrincipal'
   }
