@@ -127,7 +127,7 @@ App Service Environment must be always deployed in its own subnet in the enterpr
 
    Create the certificate that will be presented to web clients by Azure Application Gateway.
 
-### 2. Create the resoure group
+### 2. Create the resource group
 
    ```bash
    # [This takes less than one minute to run.]
