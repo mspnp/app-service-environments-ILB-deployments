@@ -1,6 +1,6 @@
 # Prepare Jump Box
 
-These steps need to be excuted only once.
+These steps need to be executed only once.
 
 Connect the Jumpbox Virtual Machine through Azure Bastion in Azure Portal. Use the user and password that you defined as the environment variables (e.g., `$JUMPBOX_USER` and `$JUMPBOX_PASSWORD`) at the beginning.
 
