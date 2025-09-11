@@ -548,6 +548,7 @@ output votingAppUrl string = '${votingWebName}.${aseDnsSuffix}'
 output testAppUrl string = '${testWebName}.${aseDnsSuffix}'
 output votingApiName string = votingApiName
 output votingFunctionName string = votingFunctionName
-output votingWebAppIdentityPrincipalId string = reference('Microsoft.Web/sites/${votingWebName}', '2022-03-01', 'Full').identity.principalId
-output votingApiIdentityPrincipalId string = reference('Microsoft.Web/sites/${votingApiName}', '2022-03-01', 'Full').identity.principalId
-output votingCounterFunctionIdentityPrincipalId string = reference('Microsoft.Web/sites/${votingFunctionName}', '2022-03-01', 'Full').identity.principalId
+output votingWebAppIdentityPrincipalId string = votingWebApp.identity.principalId
+output votingApiIdentityPrincipalId string = votingApiApp.identity.principalId
+output votingCounterFunctionIdentityPrincipalId string = votingFunction.identity.principalId
+
