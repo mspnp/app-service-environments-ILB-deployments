@@ -70,7 +70,7 @@ App Service Environment must be always deployed in its own subnet in the enterpr
    echo "${TENANTS}" | grep -z ${TENANTID_AZSUBSCRIPTION}
    ```
 
-   :warning: Do not procced if the tenant highlighted in red is not correct. Start over by `az login` into the proper Azure subscription.
+   :warning: Do not proceed if the tenant highlighted in red is not correct. Start over by `az login` into the proper Azure subscription.
 
 1. The user or service principal initiating the deployment process _must_ have the following minimal set of Azure Role-Based Access Control (RBAC) roles:
 
