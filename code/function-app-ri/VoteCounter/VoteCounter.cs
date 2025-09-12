@@ -1,5 +1,6 @@
+using Azure.Core;
+using Azure.Identity;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using System.Security;
@@ -27,9 +28,14 @@ namespace VoteCounter
             try
             {
                 var connectionString = Environment.GetEnvironmentVariable("sqldb_connection");
+
+                var credential = new DefaultAzureCredential();
+                var tokenRequestContext = new TokenRequestContext(new[] { SqlDatabaseResourceUrl });
+                var accessToken = await credential.GetTokenAsync(tokenRequestContext);
+
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
-                    conn.AccessToken = await new AzureServiceTokenProvider().GetAccessTokenAsync(SqlDatabaseResourceUrl);
+                    conn.AccessToken = accessToken.Token;
                     await conn.OpenAsync();
 
                     var text = "UPDATE dbo.Counts SET Count = Count + 1 WHERE ID = @ID;";
