@@ -105,6 +105,7 @@ resource appGatewaySubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01'
   name: subnetName
   properties: {
     addressPrefix: subnetAddressWithPrefix
+    defaultOutboundAccess: false
     networkSecurityGroup: { id: networkSecurityGroup.id, location: location }
   }
 }

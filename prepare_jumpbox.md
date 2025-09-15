@@ -31,7 +31,7 @@ Connect the Jumpbox Virtual Machine through Azure Bastion in Azure Portal. Use t
 5. Click New variable.
 6. Set up the following variables
 
-* FUNCTION_APPPATH - eg. "code/function-app-ri/FunctionApp"
+* FUNCTION_APPPATH - eg. "code/function-app-ri/VoteCounter"
 * BUILDCONFIGURATION - eg. "Release"
 * FUNCTION_APP_NAME - App Service name for Voting Function App
 * VOTINGDATA_APPPATH - eg. "code/web-app-ri/VotingData"

@@ -233,7 +233,7 @@ App Service Environment must always be deployed in its own subnet in the enterpr
    # [This takes about thirty minutes to run.]
    # For HA change zoneRedundant to true
     az deployment group create -g rg-app-service-environments-centralus --template-file templates/sites.bicep -n sites --parameters aseName=$ASE_NAME \
-    vnetName=$VNET_NAME cosmosDbName=$COSMOSDB_NAME sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME \
+    vnetName=$VNET_NAME cosmosDbName=$COSMOSDB_NAME sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME storageAccountName=$RESOURCES_STORAGE_ACCOUNT\
     aseDnsSuffix=$ASE_DNS_SUFFIX  zoneRedundant=false
 	
     export INTERNAL_APP1_URL=$(az deployment group show -g rg-app-service-environments-centralus -n sites --query properties.outputs.votingAppUrl.value -o tsv) && \
@@ -366,7 +366,7 @@ The following snippet shows an example of the JSON response:
 
 - Go to Azure portal and open the resource group of deployment above. Click on **Azure Cosmos Db Account**, then select **Network**, then delete your public ip.
 
-## Set up managed identities as users in the Sql Database
+## Set up Sql Database
 
 ### 1. Connect Query Editor
     - Go to Azure Portal
@@ -376,6 +376,7 @@ The following snippet shows an example of the JSON response:
     - Select Query Editor and Log In using Microsoft Entra authentication
 
 ### 2. Execute the query
+This is the table used by the application
 
 ```sql
   IF OBJECT_ID('dbo.Counts', 'U') IS NULL 
@@ -386,7 +387,7 @@ The following snippet shows an example of the JSON response:
       );
 ```
 
-### 3. SQL MSI Integration
+### 3. Managed Identities as users in the Sql Database
 
     ```bash
     export VOTING_COUNTER_FUNCTION_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n sites --query properties.outputs.votingFunctionName.value -o tsv)
