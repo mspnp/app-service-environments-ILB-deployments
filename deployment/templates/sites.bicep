@@ -219,7 +219,7 @@ resource builtInAccessPolicyAssignment 'Microsoft.Cache/redis/accessPolicyAssign
   name: 'builtInAccessPolicyAssignment-${uniqueString(resourceGroup().id)}'
   parent: redis
   properties: {
-    accessPolicyName: 'Data Reader' // or 'Data Owner', 'Data Contributor'
+    accessPolicyName: 'Data Contributor' // or 'Data Owner', 'Data Reader'
     objectId: votingWebApp.identity.principalId
     objectIdAlias: 'AppServiceManagedIdentity'
   }
