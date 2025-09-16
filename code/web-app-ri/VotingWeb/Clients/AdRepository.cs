@@ -25,11 +25,11 @@ namespace VotingWeb.Clients
         const string databaseId = "cacheDB";
         const string containerId = "cacheContainer";
 
-        public AdRepository(Database cache, CosmosClient cosmosClient, IConfiguration config)
+        public AdRepository(IDatabase _cache, CosmosClient cosmosClient, IConfiguration config)
         {
             try
             {
-                cache = cache;
+                cache = _cache;
 
                 client = cosmosClient;
 
