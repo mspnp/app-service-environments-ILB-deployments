@@ -207,19 +207,26 @@ resource redis 'Microsoft.Cache/Redis@2024-11-01' = {
     }
     enableNonSslPort: false
     subnetId: redisSubnetId
+    disableAccessKeyAuthentication: true // Disable access key authentication
+    redisConfiguration: {
+      'aad-enabled': 'true' // Enable Microsoft Entra authentication
+    }
+    minimumTlsVersion: '1.2'
+  }
+}
+
+resource builtInAccessPolicyAssignment 'Microsoft.Cache/redis/accessPolicyAssignments@2024-11-01' = {
+  name: 'builtInAccessPolicyAssignment-${uniqueString(resourceGroup().id)}'
+  parent: redis
+  properties: {
+    accessPolicyName: 'Data Reader' // or 'Data Owner', 'Data Contributor'
+    objectId: votingWebApp.identity.principalId
+    objectIdAlias: 'AppServiceManagedIdentity'
   }
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2024-11-01' existing = {
   name: keyVaultName
-}
-
-resource keyVaultRedisSecret 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
-  parent: keyVault
-  name: redisSecretName
-  properties: {
-    value: '${redisName}.redis.cache.windows.net:6380,abortConnect=false,ssl=true,password=${listKeys(redis.id, '2015-08-01').primaryKey}'
-  }
 }
 
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2025-02-01' = {
@@ -492,8 +499,12 @@ resource votingWebApp 'Microsoft.Web/sites@2024-11-01' = {
           value: votingWeb.properties.InstrumentationKey
         }
         {
-          name: 'ConnectionStrings:RedisConnectionString'
-          value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/${keyVaultRedisSecret.name})'
+          name: 'RedisHost'
+          value: redis.properties.hostName
+        }
+        {
+          name: 'RedisPort'
+          value: '${redis.properties.sslPort}'
         }
         {
           name: 'ConnectionStrings:queueName'
@@ -529,7 +540,7 @@ resource cosmosDBDataReaderRoleAssignment 'Microsoft.DocumentDB/databaseAccounts
   }
 }
 
-resource  cosmosDBAccountReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource cosmosDBAccountReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(votingWebApp.name, serviceBus.id, 'Cosmos DB Account Reader')
   scope: serviceBus
   properties: {
