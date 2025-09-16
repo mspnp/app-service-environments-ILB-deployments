@@ -69,8 +69,8 @@ builder.Services.AddHttpClient<IVoteDataClient, VoteDataClient>(c =>
     c.DefaultRequestHeaders.Add(HeaderNames.Accept, MediaTypeNames.Application.Json);
 });
 
-var host = configuration["Redis:Host"];
-var port = configuration["Redis:Port"];
+var host = configuration["RedisHost"];
+var port = configuration["RedisPort"];
 var options = ConfigurationOptions.Parse($"{host}:{port}");
 await options.ConfigureForAzureWithTokenCredentialAsync(new DefaultAzureCredential());
 var redis = await ConnectionMultiplexer.ConnectAsync(options);
