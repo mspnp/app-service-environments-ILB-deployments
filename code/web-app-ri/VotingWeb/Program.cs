@@ -91,8 +91,7 @@ var healthUri = new UriBuilder(configuration["ConnectionStrings:VotingDataAPIBas
 }.Uri;
 
 builder.Services.AddHealthChecks()
-    .AddUrlGroup(healthUri, timeout: TimeSpan.FromSeconds(15))
-    .AddRedis(configuration["ConnectionStrings:RedisConnectionString"]);
+    .AddUrlGroup(healthUri, timeout: TimeSpan.FromSeconds(15));
 
 var app = builder.Build();
 
