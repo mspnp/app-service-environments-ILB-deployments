@@ -14,6 +14,7 @@ using System.Net.Mime;
 using VotingWeb.Clients;
 using VotingWeb.Interfaces;
 
+
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
@@ -27,9 +28,14 @@ if (builder.Environment.IsDevelopment())
     builder.Logging.AddDebug();
 }
 
-#pragma warning disable CS0618 // Type or member is obsolete
-builder.Logging.AddApplicationInsights(configuration["ApplicationInsights:InstrumentationKey"]);
-#pragma warning restore CS0618 // Type or member is obsolete
+builder.Logging.AddApplicationInsights(
+    configureTelemetryConfiguration: config =>
+    {
+        config.ConnectionString = configuration["ApplicationInsights:ConnectionString"];
+    },
+    configureApplicationInsightsLoggerOptions: options => { }
+);
+
 builder.Logging.AddFilter<ApplicationInsightsLoggerProvider>("Microsoft", LogLevel.Trace);
 builder.Logging.AddFilter<ApplicationInsightsLoggerProvider>("Microsoft", LogLevel.Warning);
 
