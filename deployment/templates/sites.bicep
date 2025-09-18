@@ -41,7 +41,6 @@ var redisName = 'REDIS-${uniqueString(resourceGroup().id)}'
 var redisSubnetName = 'redis-subnet-${uniqueString(resourceGroup().id)}'
 var redisSubnetId = redisSubnet.id
 var redisNSGName = '${vnetName}-REDIS-NSG'
-var redisSecretName = 'RedisConnectionString'
 var votingApiName = 'votingapiapp-${uniqueString(resourceGroup().id)}'
 var votingWebName = 'votingwebapp-${uniqueString(resourceGroup().id)}'
 var testWebName = 'testwebapp-${uniqueString(resourceGroup().id)}'
