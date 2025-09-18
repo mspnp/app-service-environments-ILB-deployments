@@ -409,7 +409,7 @@ resource votingFunction 'Microsoft.Web/sites@2024-11-01' = {
         }
         {
           name: 'sqldb_connection'
-          value: 'Server=${sqlServerName}.database.windows.net,1433;Database=${sqlDatabaseName};'
+          value: 'Server=${sqlServerName}${environment().suffixes.sqlServerHostname},1433;Database=${sqlDatabaseName};'
         }
         {
           name: 'AzureWebJobsStorage'
@@ -457,7 +457,7 @@ resource votingApiApp 'Microsoft.Web/sites@2024-11-01' = {
         }
         {
           name: 'ConnectionStrings:SqlDbConnection'
-          value: 'Server=${sqlServerName}.database.windows.net,1433;Database=${sqlDatabaseName};'
+          value: 'Server=${sqlServerName}${environment().suffixes.sqlServerHostname},1433;Database=${sqlDatabaseName};'
         }
       ]
     }
