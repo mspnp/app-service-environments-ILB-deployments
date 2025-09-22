@@ -464,8 +464,8 @@ resource votingApiApp 'Microsoft.Web/sites@2024-11-01' = {
           value: votingApiAppInsights.properties.InstrumentationKey
         }
         {
-          name: 'ApplicationInsights:InstrumentationKey'
-          value: votingApiAppInsights.properties.InstrumentationKey
+          name: 'ApplicationInsights:ConnectionString'
+          value: votingApiAppInsights.properties.ConnectionString
         }
         {
           name: 'ConnectionStrings:SqlDbConnection'
