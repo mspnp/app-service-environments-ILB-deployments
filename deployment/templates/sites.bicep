@@ -257,7 +257,7 @@ resource votingFunctionAppInsights 'Microsoft.Insights/components@2020-02-02' = 
   }
 }
 
-resource votingApi 'Microsoft.Insights/components@2020-02-02' = {
+resource votingApiAppInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: votingApiName
   location: location
   kind: 'web'
@@ -269,7 +269,7 @@ resource votingApi 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource votingWeb 'Microsoft.Insights/components@2020-02-02' = {
+resource votingWebAppInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: votingWebName
   location: location
   kind: 'web'
@@ -413,7 +413,7 @@ resource votingFunction 'Microsoft.Web/sites@2024-11-01' = {
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: 'InstrumentationKey=${votingFunctionAppInsights.properties.InstrumentationKey}'
+          value: votingFunctionAppInsights.properties.ConnectionString
         }
         {
           name: 'ServiceBusConnection__fullyQualifiedNamespace'
@@ -461,11 +461,11 @@ resource votingApiApp 'Microsoft.Web/sites@2024-11-01' = {
       appSettings: [
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: votingApi.properties.InstrumentationKey
+          value: votingApiAppInsights.properties.InstrumentationKey
         }
         {
-          name: 'ApplicationInsights_ConnectionString'
-          value: votingWeb.properties.ConnectionString
+          name: 'ApplicationInsights:InstrumentationKey'
+          value: votingApiAppInsights.properties.InstrumentationKey
         }
         {
           name: 'ConnectionStrings:SqlDbConnection'
@@ -495,7 +495,7 @@ resource votingWebApp 'Microsoft.Web/sites@2024-11-01' = {
       appSettings: [
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: votingWeb.properties.InstrumentationKey
+          value: votingWebAppInsights.properties.InstrumentationKey
         }
         {
           name: 'ConnectionStrings:sbNamespace'
@@ -507,7 +507,7 @@ resource votingWebApp 'Microsoft.Web/sites@2024-11-01' = {
         }
         {
           name: 'ApplicationInsights_ConnectionString'
-          value: votingWeb.properties.ConnectionString
+          value: votingWebAppInsights.properties.ConnectionString
         }
         {
           name: 'RedisHost'

@@ -30,15 +30,9 @@ namespace VotingData
                                 logging.AddDebug();
                             }
 
-
-                            var connectionString = hostingContext.Configuration["ApplicationInsights:ConnectionString"];
-
-                            logging.AddApplicationInsights(
-                                configureTelemetryConfiguration: config =>
-                                {
-                                    config.ConnectionString = connectionString;
-                                },options => { }
-                            );
+                            logging.AddApplicationInsights((string)hostingContext
+                                .Configuration
+                                .GetValue(typeof(string), "ApplicationInsights:InstrumentationKey"));
 
                             logging.AddFilter<ApplicationInsightsLoggerProvider>("", LogLevel.Trace);
                             logging.AddFilter<ApplicationInsightsLoggerProvider>("Microsoft", LogLevel.Warning);
