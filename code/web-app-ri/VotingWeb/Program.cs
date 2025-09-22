@@ -27,7 +27,14 @@ if (builder.Environment.IsDevelopment())
     builder.Logging.AddDebug();
 }
 
-builder.Logging.AddApplicationInsights(configuration["ApplicationInsights:InstrumentationKey"]);
+builder.Services.AddLogging(builder =>
+{
+    // Only Application Insights is registered as a logger provider
+    builder.AddApplicationInsights(
+        configureTelemetryConfiguration: (config) => config.ConnectionString = configuration["ApplicationInsights:ConnectionString"],
+        configureApplicationInsightsLoggerOptions: (options) => { }
+    );
+});
 
 builder.Logging.AddFilter<ApplicationInsightsLoggerProvider>("Microsoft", LogLevel.Trace);
 builder.Logging.AddFilter<ApplicationInsightsLoggerProvider>("Microsoft", LogLevel.Warning);

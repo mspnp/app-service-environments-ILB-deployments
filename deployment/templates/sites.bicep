@@ -506,8 +506,8 @@ resource votingWebApp 'Microsoft.Web/sites@2024-11-01' = {
           value: 'https://${votingApiApp.properties.hostNames[0]}'
         }
         {
-          name: 'ApplicationInsights:InstrumentationKey'
-          value: votingWebAppInsights.properties.InstrumentationKey
+          name: 'ApplicationInsights:ConnectionString'
+          value: votingWebAppInsights.properties.ConnectionString
         }
         {
           name: 'RedisHost'
