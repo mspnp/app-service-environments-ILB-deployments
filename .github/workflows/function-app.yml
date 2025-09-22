@@ -2,7 +2,6 @@ name: Build and Deploy Function App
 on:
   workflow_dispatch:
 
-
 jobs:
   build:
     runs-on: self-hosted
