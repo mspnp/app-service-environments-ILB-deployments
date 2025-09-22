@@ -147,6 +147,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2024-11-01' = {
   location: location
   properties: {
     accessPolicies: []
+    enableRbacAuthorization: true // Enables RBAC permission model
     publicNetworkAccess: 'disabled'
     sku: {
       family: 'A'

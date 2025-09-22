@@ -66,6 +66,18 @@ var cosmosDBAccountReaderRole = subscriptionResourceId(
   'fbdf93bf-df7d-467e-a4d2-9458aa1360c8'
 ) //Cosmos DB Account Reader
 
+@description('Built-in role definition ID for Key Vault Secrets User')
+var keyVaultSecretsUserRole = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  '4633458b-17de-408a-b874-0445c86b69e6'
+) //Key Vault Secrets User. Read secret contents.
+
+@description('Built-in role definition ID for Key Vault Secrets User')
+var keyVaultCryptoUserRole = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  '12338af0-0e69-4776-bea7-57ae8d297424'
+) //Key Vault Crypto User. Perform cryptographic operations using keys. 
+
 resource cosmosDatabaseAccount 'Microsoft.DocumentDB/databaseAccounts@2025-04-15' existing = {
   name: cosmosDbName
 }
@@ -245,7 +257,7 @@ resource votingFunctionAppInsights 'Microsoft.Insights/components@2020-02-02' = 
   }
 }
 
-resource votingApi 'Microsoft.Insights/components@2020-02-02' = {
+resource votingApiAppInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: votingApiName
   location: location
   kind: 'web'
@@ -257,7 +269,7 @@ resource votingApi 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource votingWeb 'Microsoft.Insights/components@2020-02-02' = {
+resource votingWebAppInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: votingWebName
   location: location
   kind: 'web'
@@ -401,7 +413,7 @@ resource votingFunction 'Microsoft.Web/sites@2024-11-01' = {
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: 'InstrumentationKey=${votingFunctionAppInsights.properties.InstrumentationKey}'
+          value: votingFunctionAppInsights.properties.ConnectionString
         }
         {
           name: 'ServiceBusConnection__fullyQualifiedNamespace'
@@ -449,11 +461,11 @@ resource votingApiApp 'Microsoft.Web/sites@2024-11-01' = {
       appSettings: [
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: votingApi.properties.InstrumentationKey
+          value: votingApiAppInsights.properties.InstrumentationKey
         }
         {
-          name: 'ApplicationInsights_ConnectionString'
-          value: votingWeb.properties.ConnectionString
+          name: 'ApplicationInsights:ConnectionString'
+          value: votingApiAppInsights.properties.ConnectionString
         }
         {
           name: 'ConnectionStrings:SqlDbConnection'
@@ -483,7 +495,7 @@ resource votingWebApp 'Microsoft.Web/sites@2024-11-01' = {
       appSettings: [
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: votingWeb.properties.InstrumentationKey
+          value: votingWebAppInsights.properties.InstrumentationKey
         }
         {
           name: 'ConnectionStrings:sbNamespace'
@@ -494,8 +506,8 @@ resource votingWebApp 'Microsoft.Web/sites@2024-11-01' = {
           value: 'https://${votingApiApp.properties.hostNames[0]}'
         }
         {
-          name: 'ApplicationInsights_ConnectionString'
-          value: votingWeb.properties.ConnectionString
+          name: 'ApplicationInsights:ConnectionString'
+          value: votingWebAppInsights.properties.ConnectionString
         }
         {
           name: 'RedisHost'
@@ -577,44 +589,87 @@ resource testWebApp 'Microsoft.Web/sites@2024-11-01' = {
   }
 }
 
-resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2024-11-01' = {
-  parent: keyVault
-  name: 'add'
+// Voting Function
+resource secretsUserVotingFunction 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, votingFunction.name, keyVaultSecretsUserRole)
+  scope: keyVault
   properties: {
-    accessPolicies: [
-      {
-        objectId: votingFunction.identity.principalId
-        permissions: {
-          secrets: ['get', 'list']
-          keys: ['get', 'list']
-        }
-        tenantId: subscription().tenantId
-      }
-      {
-        objectId: votingWebApp.identity.principalId
-        permissions: {
-          secrets: ['get', 'list']
-          keys: ['get', 'list']
-        }
-        tenantId: subscription().tenantId
-      }
-      {
-        objectId: votingApiApp.identity.principalId
-        permissions: {
-          secrets: ['get', 'list']
-          keys: ['get', 'list']
-        }
-        tenantId: subscription().tenantId
-      }
-      {
-        objectId: testWebApp.identity.principalId
-        permissions: {
-          secrets: ['get', 'list']
-          keys: ['get', 'list']
-        }
-        tenantId: subscription().tenantId
-      }
-    ]
+    principalId: votingFunction.identity.principalId
+    roleDefinitionId: keyVaultSecretsUserRole
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource cryptoUserVotingFunction 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, votingFunction.name, keyVaultCryptoUserRole)
+  scope: keyVault
+  properties: {
+    principalId: votingFunction.identity.principalId
+    roleDefinitionId: keyVaultCryptoUserRole
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Voting Web App
+resource secretsUserVotingWebApp 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, votingWebApp.name, keyVaultSecretsUserRole)
+  scope: keyVault
+  properties: {
+    principalId: votingWebApp.identity.principalId
+    roleDefinitionId: keyVaultSecretsUserRole
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource cryptoUserVotingWebApp 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, votingWebApp.name, keyVaultCryptoUserRole)
+  scope: keyVault
+  properties: {
+    principalId: votingWebApp.identity.principalId
+    roleDefinitionId: keyVaultCryptoUserRole
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Voting API App
+resource secretsUserVotingApiApp 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, votingApiApp.name, keyVaultSecretsUserRole)
+  scope: keyVault
+  properties: {
+    principalId: votingApiApp.identity.principalId
+    roleDefinitionId: keyVaultSecretsUserRole
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource cryptoUserVotingApiApp 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, votingApiApp.name, keyVaultCryptoUserRole)
+  scope: keyVault
+  properties: {
+    principalId: votingApiApp.identity.principalId
+    roleDefinitionId: keyVaultCryptoUserRole
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Test Web App
+resource secretsUserTestWebApp 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, testWebApp.name, keyVaultSecretsUserRole)
+  scope: keyVault
+  properties: {
+    principalId: testWebApp.identity.principalId
+    roleDefinitionId: keyVaultSecretsUserRole
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource cryptoUserTestWebApp 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, testWebApp.name, keyVaultCryptoUserRole)
+  scope: keyVault
+  properties: {
+    principalId: testWebApp.identity.principalId
+    roleDefinitionId: keyVaultCryptoUserRole
+    principalType: 'ServicePrincipal'
   }
 }
 
