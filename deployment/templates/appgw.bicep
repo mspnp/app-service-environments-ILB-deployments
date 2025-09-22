@@ -5,7 +5,7 @@ param location string = resourceGroup().location
 param vnetName string
 
 @description('The ip address prefix that gateway will use.')
-param subnetAddressWithPrefix string
+param subnetAddressWithPrefix string = '10.0.1.0/24'
 
 @description('List of applications to configure. Each element format is: { name, hostName, backendAddresses, certificate: { data, password }, probePath }')
 param appgwApplications array
@@ -31,9 +31,9 @@ var appgwSslCertificateName = '${appGatewayName}-ssl-'
 var appgwRouteRulesName = '${appGatewayName}-routerules-'
 var appgwAutoScaleMinCapacity = 0
 var appgwAutoScaleMaxCapacity = 10
-var appgwZonesArray = (empty(appgwZones) ? json('null') : split(appgwZones, ','))
+var appgwZonesArray = (empty(appgwZones) ? null : split(appgwZones, ','))
 
-resource publicIPAddress 'Microsoft.Network/publicIPAddresses@2022-05-01' = {
+resource publicIPAddress 'Microsoft.Network/publicIPAddresses@2024-07-01' = {
   name: appgwPublicIpAddressName
   location: location
   sku: {
@@ -44,7 +44,7 @@ resource publicIPAddress 'Microsoft.Network/publicIPAddresses@2022-05-01' = {
   }
 }
 
-resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2022-05-01' = {
+resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2024-07-01' = {
   name: appgwNSGName
   location: location
   tags: {
@@ -101,15 +101,16 @@ resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2022-05-0
   }
 }
 
-resource appGatewaySubnet 'Microsoft.Network/virtualNetworks/subnets@2022-05-01' = {
+resource appGatewaySubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' = {
   name: subnetName
   properties: {
     addressPrefix: subnetAddressWithPrefix
+    defaultOutboundAccess: false
     networkSecurityGroup: { id: networkSecurityGroup.id, location: location }
   }
 }
 
-resource appGateway 'Microsoft.Network/applicationGateways@2022-05-01' = {
+resource appGateway 'Microsoft.Network/applicationGateways@2024-07-01' = {
   name: appGatewayName
   location: location
   zones: appgwZonesArray

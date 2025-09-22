@@ -1,9 +1,6 @@
 @description('The location in which the resources should be deployed.')
 param location string = resourceGroup().location
 
-@description('The vnet name where the gateway will be connected.')
-param vnetName string
-
 @description('The name for the sql server admin user.')
 param sqlAdminUserName string
 
@@ -16,9 +13,6 @@ param sqlEntraIdAdminSid string
 
 @description('True for high availability deployments, False otherwise.')
 param zoneRedundant bool = false
-
-@description('Comma separated subnet names that can access the services.')
-param allowedSubnetNames string
 
 var cosmosName = 'votingcosmos-${uniqueString(resourceGroup().id)}'
 var cosmosDatabaseName = 'cacheDB'
@@ -33,9 +27,8 @@ var serviceBusQueueName = 'votingqueue'
 var resourcesStorageAccountName = toLower('resources${uniqueString(resourceGroup().id)}')
 var resourcesContainerName = 'rscontainer'
 var keyVaultName = 'akeyvault1-${uniqueString(resourceGroup().id)}'
-var allowedSubnetNamesArray = split(allowedSubnetNames, ',')
  
-resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
+resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2025-04-15' = {
   name: cosmosName
   location: location
   tags: {
@@ -65,7 +58,7 @@ resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
   }
 }
 
-resource cosmosDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2022-05-15' = {
+resource cosmosDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2025-04-15' = {
   parent: cosmos
   name: cosmosDatabaseName
   properties: {
@@ -78,7 +71,7 @@ resource cosmosDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2022
   }
 }
 
-resource cosmosDatabaseContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2022-05-15' = {
+resource cosmosDatabaseContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2025-04-15' = {
   parent: cosmosDatabase
   name: cosmosContainerName
   properties: {
@@ -108,7 +101,7 @@ resource cosmosDatabaseContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatab
   }
 }
  
-resource sqlServer 'Microsoft.Sql/servers@2022-02-01-preview' = {
+resource sqlServer 'Microsoft.Sql/servers@2024-11-01-preview' = {
   name: sqlServerName
   location: location
   properties: {
@@ -119,7 +112,7 @@ resource sqlServer 'Microsoft.Sql/servers@2022-02-01-preview' = {
   }
 }
 
-resource sqlServerDatabase 'Microsoft.Sql/servers/databases@2022-02-01-preview' = {
+resource sqlServerDatabase 'Microsoft.Sql/servers/databases@2024-11-01-preview' = {
   parent: sqlServer
   name: sqlDatabaseName
   location: location
@@ -138,7 +131,7 @@ resource sqlServerDatabase 'Microsoft.Sql/servers/databases@2022-02-01-preview' 
 }
 
 
-resource sqlServerAdmin 'Microsoft.Sql/servers/administrators@2022-02-01-preview' = {
+resource sqlServerAdmin 'Microsoft.Sql/servers/administrators@2024-11-01-preview' = {
   parent: sqlServer
   name: 'activeDirectory'
   //location: location
@@ -150,7 +143,7 @@ resource sqlServerAdmin 'Microsoft.Sql/servers/administrators@2022-02-01-preview
   }
 }
 
-resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
+resource keyVault 'Microsoft.KeyVault/vaults@2024-11-01' = {
   name: keyVaultName
   location: location
   properties: {
@@ -164,7 +157,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
   }
 }
 
-resource keyVaultCosmosKey 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+resource keyVaultCosmosKey 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
   parent: keyVault
   name: 'CosmosKey'
   properties: {
@@ -172,7 +165,7 @@ resource keyVaultCosmosKey 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   }
 }
 
-resource keyVaultServiceBusListenerConnectionString 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+resource keyVaultServiceBusListenerConnectionString 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
   parent: keyVault
   name: 'ServiceBusListenerConnectionString'
   properties: {
@@ -180,7 +173,7 @@ resource keyVaultServiceBusListenerConnectionString 'Microsoft.KeyVault/vaults/s
   }
 }
 
-resource keyVaultServiceBusSenderConnectionString 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+resource keyVaultServiceBusSenderConnectionString 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
   parent: keyVault
   name: 'ServiceBusSenderConnectionString'
   properties: {
@@ -188,7 +181,7 @@ resource keyVaultServiceBusSenderConnectionString 'Microsoft.KeyVault/vaults/sec
   }
 }
 
-resource serviceBus 'Microsoft.ServiceBus/namespaces@2022-01-01-preview' = {
+resource serviceBus 'Microsoft.ServiceBus/namespaces@2025-05-01-preview' = {
   name: serviceBusName
   location: location
   sku: {
@@ -202,7 +195,7 @@ resource serviceBus 'Microsoft.ServiceBus/namespaces@2022-01-01-preview' = {
   }
 }
 
-resource serviceBusListenerSharedAccessKey 'Microsoft.ServiceBus/namespaces/AuthorizationRules@2022-01-01-preview' = {
+resource serviceBusListenerSharedAccessKey 'Microsoft.ServiceBus/namespaces/AuthorizationRules@2025-05-01-preview' = {
   parent: serviceBus
   name: 'ListenerSharedAccessKey'
   //location: location
@@ -213,7 +206,7 @@ resource serviceBusListenerSharedAccessKey 'Microsoft.ServiceBus/namespaces/Auth
   }
 }
 
-resource serviceBusSenderSharedAccessKey 'Microsoft.ServiceBus/namespaces/AuthorizationRules@2022-01-01-preview' = {
+resource serviceBusSenderSharedAccessKey 'Microsoft.ServiceBus/namespaces/AuthorizationRules@2025-05-01-preview' = {
   parent: serviceBus
   name: 'SenderSharedAccessKey'
   //location: location
@@ -224,7 +217,7 @@ resource serviceBusSenderSharedAccessKey 'Microsoft.ServiceBus/namespaces/Author
   }
 }
 
-resource serviceBusQueue 'Microsoft.ServiceBus/namespaces/queues@2022-01-01-preview' = {
+resource serviceBusQueue 'Microsoft.ServiceBus/namespaces/queues@2025-05-01-preview' = {
   parent: serviceBus
   name: serviceBusQueueName
   //location: location
@@ -245,7 +238,7 @@ resource serviceBusQueue 'Microsoft.ServiceBus/namespaces/queues@2022-01-01-prev
   }
 }
 
-resource resourcesStorageAccount 'Microsoft.Storage/storageAccounts@2021-09-01' = {
+resource resourcesStorageAccount 'Microsoft.Storage/storageAccounts@2025-01-01' = {
   name: resourcesStorageAccountName
   location: location
   kind: 'StorageV2'
@@ -260,7 +253,7 @@ resource resourcesStorageAccount 'Microsoft.Storage/storageAccounts@2021-09-01' 
 }
 
 
-resource resourcesStorageAccountDefaultResourcesContainerName 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-09-01' = {
+resource resourcesStorageAccountDefaultResourcesContainerName 'Microsoft.Storage/storageAccounts/blobServices/containers@2025-01-01' = {
   name: '${resourcesStorageAccountName}/default/${resourcesContainerName}'
   properties: {
     publicAccess: 'Blob'

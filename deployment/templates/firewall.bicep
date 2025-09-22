@@ -3,16 +3,17 @@ param location string = resourceGroup().location
 param vnetName string
 
 @description('The ip prefix the firewall will use.')
-param firewallSubnetPrefix string
+param firewallSubnetPrefix string = '10.0.200.0/24'
 
 var firewallSubnetName = 'AzureFirewallSubnet'
 var firewallPublicIpName = 'firewallIp-${uniqueString(resourceGroup().id)}'
 var firewallName = 'firewall-${uniqueString(resourceGroup().id)}'
 
-resource firewallSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
+resource firewallSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' = {
   name: '${vnetName}/${firewallSubnetName}'
   properties: {
     addressPrefix: firewallSubnetPrefix
+    defaultOutboundAccess: false
     serviceEndpoints: [
       {
         service: 'Microsoft.AzureCosmosDB'
@@ -42,7 +43,7 @@ resource firewallSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' =
   }
 }
 
-resource firewallPublicIp 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
+resource firewallPublicIp 'Microsoft.Network/publicIPAddresses@2024-07-01' = {
   location: location
   name: firewallPublicIpName
   sku: {
@@ -55,7 +56,7 @@ resource firewallPublicIp 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
   }
 }
 
-resource firewall 'Microsoft.Network/azureFirewalls@2022-07-01' = {
+resource firewall 'Microsoft.Network/azureFirewalls@2024-07-01' = {
   name: firewallName
   location: location
   properties: {

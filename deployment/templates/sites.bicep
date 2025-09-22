@@ -5,7 +5,7 @@ param location string = resourceGroup().location
 param vnetName string
 
 @description('The ip address prefix REDIS will use.')
-param redisSubnetAddressPrefix string
+param redisSubnetAddressPrefix string = '10.0.2.0/24'
 
 @description('The ASE name where to host the applications')
 param aseName string
@@ -24,6 +24,9 @@ param sqlServerName string
 
 @description('The name for the sql database')
 param sqlDatabaseName string
+
+@description('The name for the storage account')
+param storageAccountName string
 
 @description('The name for the log analytics workspace')
 param logAnalyticsWorkspace string = '${uniqueString(resourceGroup().id)}la'
@@ -49,7 +52,7 @@ var testWebPlanName = '${testWebName}-plan'
 var votingFunctionPlanName = '${votingFunctionName}-plan'
 var aseId = resourceId('Microsoft.Web/hostingEnvironments', aseName)
 
-resource redisNSG 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
+resource redisNSG 'Microsoft.Network/networkSecurityGroups@2024-07-01' = {
   name: redisNSGName
   location: location
   tags: {
@@ -159,21 +162,21 @@ resource redisNSG 'Microsoft.Network/networkSecurityGroups@2022-07-01' = {
   }
 }
 
-resource redisSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
+resource redisSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' = {
   name: '${vnetName}/${redisSubnetName}'
-  //location: location
   properties: {
     addressPrefix: redisSubnetAddressPrefix
+    defaultOutboundAccess: false
     networkSecurityGroup: {
       id: redisNSG.id
     }
   }
 }
 
-resource redis 'Microsoft.Cache/Redis@2022-06-01' = {
+resource redis 'Microsoft.Cache/Redis@2024-11-01' = {
   name: redisName
   location: location
-  zones: (zoneRedundant ? ['1','2','3'] : null)
+  zones: (zoneRedundant ? ['1', '2', '3'] : null)
   properties: {
     sku: {
       name: 'Premium'
@@ -185,13 +188,11 @@ resource redis 'Microsoft.Cache/Redis@2022-06-01' = {
   }
 }
 
-
-resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
+resource keyVault 'Microsoft.KeyVault/vaults@2024-11-01' existing = {
   name: keyVaultName
 }
 
-
-resource keyVaultRedisSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+resource keyVaultRedisSecret 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
   parent: keyVault
   name: redisSecretName
   properties: {
@@ -199,11 +200,10 @@ resource keyVaultRedisSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   }
 }
 
-resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2025-02-01' = {
   name: logAnalyticsWorkspace
-  location: location  
+  location: location
 }
-
 
 resource votingFunctionAppInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: votingFunctionName
@@ -253,7 +253,7 @@ resource testWeb 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource votingFunctionPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
+resource votingFunctionPlan 'Microsoft.Web/serverfarms@2024-11-01' = {
   name: votingFunctionPlanName
   location: location
   sku: {
@@ -269,12 +269,12 @@ resource votingFunctionPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
     targetWorkerSizeId: 0
     //hostingEnvironment: aseName
     hostingEnvironmentProfile: {
-      id:aseId
+      id: aseId
     }
   }
 }
 
-resource votingApiPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
+resource votingApiPlan 'Microsoft.Web/serverfarms@2024-11-01' = {
   name: votingApiPlanName
   location: location
   sku: {
@@ -290,12 +290,12 @@ resource votingApiPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
     targetWorkerSizeId: 0
     //hostingEnvironment: aseName
     hostingEnvironmentProfile: {
-      id:aseId
+      id: aseId
     }
   }
 }
 
-resource votingWebPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
+resource votingWebPlan 'Microsoft.Web/serverfarms@2024-11-01' = {
   name: votingWebPlanName
   location: location
   sku: {
@@ -311,12 +311,12 @@ resource votingWebPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
     targetWorkerSizeId: 0
     //hostingEnvironment: aseName
     hostingEnvironmentProfile: {
-      id:aseId
+      id: aseId
     }
   }
 }
 
-resource testWebPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
+resource testWebPlan 'Microsoft.Web/serverfarms@2024-11-01' = {
   name: testWebPlanName
   location: location
   sku: {
@@ -332,12 +332,16 @@ resource testWebPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
     targetWorkerSizeId: 0
     //hostingEnvironment: aseName
     hostingEnvironmentProfile: {
-      id:aseId
+      id: aseId
     }
   }
 }
 
-resource votingFunction 'Microsoft.Web/sites@2022-03-01' = {
+resource votingStorage 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
+  name: storageAccountName
+}
+
+resource votingFunction 'Microsoft.Web/sites@2024-11-01' = {
   name: votingFunctionName
   location: location
   kind: 'functionapp'
@@ -346,29 +350,30 @@ resource votingFunction 'Microsoft.Web/sites@2022-03-01' = {
   }
   properties: {
     enabled: true
-    //name: votingFunctionName_var
     hostingEnvironmentProfile: {
-      id:aseId
+      id: aseId
     }
     serverFarmId: votingFunctionPlan.id
     siteConfig: {
       alwaysOn: true
+      netFrameworkVersion: 'v9.0'
+      use32BitWorkerProcess: false
       appSettings: [
         {
           name: 'FUNCTIONS_EXTENSION_VERSION'
-          value: '~3'
+          value: '~4'
         }
         {
           name: 'FUNCTIONS_WORKER_RUNTIME'
-          value: 'dotnet'
+          value: 'dotnet-isolated'
         }
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: reference(votingFunctionAppInsights.id, '2020-02-02').InstrumentationKey
+          value: votingFunctionAppInsights.properties.InstrumentationKey
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: 'InstrumentationKey=${reference(votingFunctionAppInsights.id, '2020-02-02').InstrumentationKey}'
+          value: 'InstrumentationKey=${votingFunctionAppInsights.properties.InstrumentationKey}'
         }
         {
           name: 'SERVICEBUS_CONNECTION_STRING'
@@ -378,12 +383,16 @@ resource votingFunction 'Microsoft.Web/sites@2022-03-01' = {
           name: 'sqldb_connection'
           value: 'Server=${sqlServerName}.database.windows.net,1433;Database=${sqlDatabaseName};'
         }
+        {
+          name: 'AzureWebJobsStorage'
+          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${votingStorage.listKeys().keys[0].value};EndpointSuffix=core.windows.net'
+        }
       ]
     }
   }
 }
 
-resource votingApiApp 'Microsoft.Web/sites@2022-03-01' = {
+resource votingApiApp 'Microsoft.Web/sites@2024-11-01' = {
   name: votingApiName
   location: location
   kind: 'app'
@@ -392,20 +401,21 @@ resource votingApiApp 'Microsoft.Web/sites@2022-03-01' = {
   }
   properties: {
     enabled: true
-    //name: votingApiName_var
     hostingEnvironmentProfile: {
-      id:aseId
+      id: aseId
     }
     serverFarmId: votingApiPlan.id
     siteConfig: {
+      netFrameworkVersion: 'v9.0'
+      use32BitWorkerProcess: false
       appSettings: [
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: reference(votingApi.id, '2020-02-02').InstrumentationKey
+          value: votingApi.properties.InstrumentationKey
         }
         {
           name: 'ApplicationInsights:InstrumentationKey'
-          value: reference(votingApi.id, '2020-02-02').InstrumentationKey
+          value: votingApi.properties.InstrumentationKey
         }
         {
           name: 'ConnectionStrings:SqlDbConnection'
@@ -416,7 +426,7 @@ resource votingApiApp 'Microsoft.Web/sites@2022-03-01' = {
   }
 }
 
-resource votingWebApp 'Microsoft.Web/sites@2022-03-01' = {
+resource votingWebApp 'Microsoft.Web/sites@2024-11-01' = {
   name: votingWebName
   location: location
   kind: 'app'
@@ -426,19 +436,20 @@ resource votingWebApp 'Microsoft.Web/sites@2022-03-01' = {
   properties: {
     enabled: true
     hostingEnvironmentProfile: {
-      id:aseId
+      id: aseId
     }
     serverFarmId: votingWebPlan.id
     siteConfig: {
+      netFrameworkVersion: 'v9.0'
+      use32BitWorkerProcess: false
       appSettings: [
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: reference(votingWeb.id, '2020-02-02').InstrumentationKey
+          value: votingWeb.properties.InstrumentationKey
         }
         {
           name: 'ConnectionStrings:sbConnectionString'
           value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/${serviceBusSenderConnectionStringSecretName})'
-          
         }
         {
           name: 'ConnectionStrings:VotingDataAPIBaseUri'
@@ -446,7 +457,7 @@ resource votingWebApp 'Microsoft.Web/sites@2022-03-01' = {
         }
         {
           name: 'ApplicationInsights:InstrumentationKey'
-          value: reference(votingWeb.id, '2020-02-02').InstrumentationKey
+          value: votingWeb.properties.InstrumentationKey
         }
         {
           name: 'ConnectionStrings:RedisConnectionString'
@@ -469,7 +480,7 @@ resource votingWebApp 'Microsoft.Web/sites@2022-03-01' = {
   }
 }
 
-resource testWebApp 'Microsoft.Web/sites@2022-03-01' = {
+resource testWebApp 'Microsoft.Web/sites@2024-11-01' = {
   name: testWebName
   location: location
   kind: 'app'
@@ -478,27 +489,26 @@ resource testWebApp 'Microsoft.Web/sites@2022-03-01' = {
   }
   properties: {
     enabled: true
-    //name: testWebName_var
     hostingEnvironmentProfile: {
-      id:aseId
+      id: aseId
     }
     serverFarmId: testWebPlan.id
     siteConfig: {
       appSettings: [
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: reference(testWeb.id, '2020-02-02').InstrumentationKey
+          value: testWeb.properties.InstrumentationKey
         }
         {
           name: 'ApplicationInsights:InstrumentationKey'
-          value: reference(testWeb.id, '2020-02-02').InstrumentationKey
+          value: testWeb.properties.InstrumentationKey
         }
       ]
     }
   }
 }
 
-resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2022-07-01' = {
+resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2024-11-01' = {
   parent: keyVault
   name: 'add'
   properties: {
@@ -506,32 +516,32 @@ resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2022-07-
       {
         objectId: votingFunction.identity.principalId
         permissions: {
-          secrets: ['get','list']
-          keys: ['get','list']
+          secrets: ['get', 'list']
+          keys: ['get', 'list']
         }
         tenantId: subscription().tenantId
       }
       {
         objectId: votingWebApp.identity.principalId
         permissions: {
-          secrets: ['get','list']
-          keys: ['get','list']
+          secrets: ['get', 'list']
+          keys: ['get', 'list']
         }
         tenantId: subscription().tenantId
       }
       {
         objectId: votingApiApp.identity.principalId
         permissions: {
-          secrets: ['get','list']
-          keys: ['get','list']
+          secrets: ['get', 'list']
+          keys: ['get', 'list']
         }
         tenantId: subscription().tenantId
       }
       {
         objectId: testWebApp.identity.principalId
         permissions: {
-          secrets: ['get','list']
-          keys: ['get','list']
+          secrets: ['get', 'list']
+          keys: ['get', 'list']
         }
         tenantId: subscription().tenantId
       }
@@ -548,6 +558,7 @@ output votingAppUrl string = '${votingWebName}.${aseDnsSuffix}'
 output testAppUrl string = '${testWebName}.${aseDnsSuffix}'
 output votingApiName string = votingApiName
 output votingFunctionName string = votingFunctionName
-output votingWebAppIdentityPrincipalId string = reference('Microsoft.Web/sites/${votingWebName}', '2022-03-01', 'Full').identity.principalId
-output votingApiIdentityPrincipalId string = reference('Microsoft.Web/sites/${votingApiName}', '2022-03-01', 'Full').identity.principalId
-output votingCounterFunctionIdentityPrincipalId string = reference('Microsoft.Web/sites/${votingFunctionName}', '2022-03-01', 'Full').identity.principalId
+output votingWebAppIdentityPrincipalId string = votingWebApp.identity.principalId
+output votingApiIdentityPrincipalId string = votingApiApp.identity.principalId
+output votingCounterFunctionIdentityPrincipalId string = votingFunction.identity.principalId
+
