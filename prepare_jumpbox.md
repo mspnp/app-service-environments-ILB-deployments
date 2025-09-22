@@ -41,12 +41,24 @@ Connect the Jumpbox Virtual Machine through Azure Bastion in Azure Portal. Use t
 
 # Set Up Github Actions Secret
 
-Obtain AZURE_CREDENTIALS for Github Runner - Copy the output of the following command and paste as secret:
+Create and manage user-assigned managed identities to allow GitHub Actions to deploy the apps. The Bicep template also assigns the Contributor role to the resource group and federates the identity to trust on GitHub. [More information here](https://learn.microsoft.com/azure/developer/github/connect-from-azure-openid-connect).
 
 ```bash
-az ad sp create-for-rbac --name "votingapp-service-principal" --role contributor \
-                                --scopes /subscriptions/$SUBID/resourceGroups/rg-app-service-environments-centralus \
-                                --sdk-auth
+export GITHUB_OWNER=<add your user>
+az deployment group create \
+  --resource-group rg-app-service-environments-centralus \
+  --template-file templates/github-action-identity.bicep \
+  --parameters githubOwner=$GITHUB_OWNER
+```
+
+Read the results and create github secrets AZURE_CLIENT_ID, AZURE_SUBSCRIPTION_ID, AZURE_TENANT_ID.
+```bash
+export AZURE_CLIENT_ID=$(az deployment group show --resource-group rg-app-service-environments-centralus --name github-action-identity --query "properties.outputs.azureClientId.value" --output tsv)
+export AZURE_TENANT_ID=$(az deployment group show --resource-group rg-app-service-environments-centralus --name github-action-identity --query "properties.outputs.azureTenantId.value" --output tsv)
+export AZURE_SUBSCRIPTION_ID=$(az deployment group show --resource-group rg-app-service-environments-centralus --name github-action-identity --query "properties.outputs.azureSubscriptionId.value" --output tsv)
+echo $AZURE_CLIENT_ID
+echo $AZURE_TENANT_ID
+echo $AZURE_SUBSCRIPTION_ID
 ```
 
 # Set Up Github Actions Runner on Jumpbox

@@ -3,13 +3,14 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Configuration;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.Azure.Cosmos;
-using StackExchange.Redis;
 using VotingWeb.Exceptions;
 using VotingWeb.Interfaces;
 using VotingWeb.Models;
@@ -24,15 +25,15 @@ namespace VotingWeb.Clients
         const string databaseId = "cacheDB";
         const string containerId = "cacheContainer";
 
-        public AdRepository(string cacheConnectionString,
-                                string cosmosEndpointUri,
-                                string cosmosKey)
+        public AdRepository(CosmosClient cosmosClient, IConfiguration config)
         {
             try
             {
-                Lazy<ConnectionMultiplexer> lazyConnection = GetLazyConnection(cacheConnectionString);
+                Lazy<ConnectionMultiplexer> lazyConnection = GetLazyConnection(config.GetValue<string>("ConnectionStrings:RedisConnectionString"));
                 cache = lazyConnection.Value.GetDatabase();
-                client = new CosmosClient(cosmosEndpointUri, cosmosKey);
+
+                client = cosmosClient;
+
                 container = client.GetDatabase(databaseId).GetContainer(containerId);
             }
             catch (Exception ex) when (ex is RedisConnectionException ||

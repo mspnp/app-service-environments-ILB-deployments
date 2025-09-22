@@ -5,10 +5,13 @@
 
 using System;
 using System.Net.Mime;
+using Azure.Identity;
+using Azure.Messaging.ServiceBus;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -38,16 +41,23 @@ namespace VotingWeb
 
             services.AddControllersWithViews();
 
-            services.AddSingleton<IVoteQueueClient>(s =>
-                new VoteQueueClient(
-                    Configuration.GetValue<string>("ConnectionStrings:sbConnectionString"),
-                    Configuration.GetValue<string>("ConnectionStrings:queueName")));
 
-            services.AddSingleton<IAdRepository>(s =>
-                new AdRepository(
-                    Configuration.GetValue<string>("ConnectionStrings:RedisConnectionString"),
-                    Configuration.GetValue<string>("ConnectionStrings:CosmosUri"),
-                    Configuration.GetValue<string>("ConnectionStrings:CosmosKey")));
+            services.AddSingleton(sp =>
+            {
+                var credential = new DefaultAzureCredential();
+                return new ServiceBusClient(Configuration.GetValue<string>("ConnectionStrings:sbNamespace"), credential);
+            });
+
+            services.AddSingleton<IVoteQueueClient, VoteQueueClient>();
+
+            services.AddSingleton(s =>
+            {
+                var credential = new DefaultAzureCredential();
+                var client = new CosmosClient(Configuration.GetValue<string>("ConnectionStrings:CosmosUri"), credential);
+                return client;
+            });
+
+            services.AddSingleton<IAdRepository, AdRepository>();
 
             services.AddHttpClient<IVoteDataClient, VoteDataClient>(c =>
             {

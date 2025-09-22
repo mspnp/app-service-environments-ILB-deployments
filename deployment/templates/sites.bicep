@@ -19,6 +19,9 @@ param keyVaultName string
 @description('The cosmos DB name')
 param cosmosDbName string
 
+@description('The namespace for the service bus')
+param serviceBusNamespace string
+
 @description('The name for the sql server')
 param sqlServerName string
 
@@ -39,9 +42,6 @@ var redisSubnetName = 'redis-subnet-${uniqueString(resourceGroup().id)}'
 var redisSubnetId = redisSubnet.id
 var redisNSGName = '${vnetName}-REDIS-NSG'
 var redisSecretName = 'RedisConnectionString'
-var cosmosKeySecretName = 'CosmosKey'
-var serviceBusListenerConnectionStringSecretName = 'ServiceBusListenerConnectionString'
-var serviceBusSenderConnectionStringSecretName = 'ServiceBusSenderConnectionString'
 var votingApiName = 'votingapiapp-${uniqueString(resourceGroup().id)}'
 var votingWebName = 'votingwebapp-${uniqueString(resourceGroup().id)}'
 var testWebName = 'testwebapp-${uniqueString(resourceGroup().id)}'
@@ -51,6 +51,28 @@ var votingWebPlanName = '${votingWebName}-plan'
 var testWebPlanName = '${testWebName}-plan'
 var votingFunctionPlanName = '${votingFunctionName}-plan'
 var aseId = resourceId('Microsoft.Web/hostingEnvironments', aseName)
+
+var azureServiceBusDataSenderRole = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  '69a216fc-b8fb-44d8-bc22-1f3c2cd27a39'
+) // Azure Service Bus Data Sender
+
+var azureServiceBusDataReceiverRole = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  '4f6d3b9b-027b-4f4c-9142-0e5a2a2247e0'
+) //Azure Service Bus Data Receiver
+
+var cosmosDBAccountReaderRole = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  'fbdf93bf-df7d-467e-a4d2-9458aa1360c8'
+) //Cosmos DB Account Reader
+
+resource cosmosDatabaseAccount 'Microsoft.DocumentDB/databaseAccounts@2025-04-15' existing = {
+  name: cosmosDbName
+}
+resource serviceBus 'Microsoft.ServiceBus/namespaces@2025-05-01-preview' existing = {
+  name: serviceBusNamespace
+}
 
 resource redisNSG 'Microsoft.Network/networkSecurityGroups@2024-07-01' = {
   name: redisNSGName
@@ -376,8 +398,8 @@ resource votingFunction 'Microsoft.Web/sites@2024-11-01' = {
           value: 'InstrumentationKey=${votingFunctionAppInsights.properties.InstrumentationKey}'
         }
         {
-          name: 'SERVICEBUS_CONNECTION_STRING'
-          value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/${serviceBusListenerConnectionStringSecretName})'
+          name: 'ServiceBusConnection__fullyQualifiedNamespace'
+          value: '${serviceBusNamespace}.servicebus.windows.net'
         }
         {
           name: 'sqldb_connection'
@@ -385,10 +407,20 @@ resource votingFunction 'Microsoft.Web/sites@2024-11-01' = {
         }
         {
           name: 'AzureWebJobsStorage'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${votingStorage.listKeys().keys[0].value};EndpointSuffix=core.windows.net'
+          value: votingStorage.listKeys().keys[0].value
         }
       ]
     }
+  }
+}
+
+resource serviceBusDataReceiverRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(votingWebApp.name, serviceBus.id, 'Azure Service Bus Data Receiver')
+  scope: serviceBus
+  properties: {
+    roleDefinitionId: azureServiceBusDataReceiverRole
+    principalId: votingFunction.identity.principalId
+    principalType: 'ServicePrincipal'
   }
 }
 
@@ -448,8 +480,8 @@ resource votingWebApp 'Microsoft.Web/sites@2024-11-01' = {
           value: votingWeb.properties.InstrumentationKey
         }
         {
-          name: 'ConnectionStrings:sbConnectionString'
-          value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/${serviceBusSenderConnectionStringSecretName})'
+          name: 'ConnectionStrings:sbNamespace'
+          value: 'https://${serviceBusNamespace}.servicebus.windows.net/'
         }
         {
           name: 'ConnectionStrings:VotingDataAPIBaseUri'
@@ -471,12 +503,39 @@ resource votingWebApp 'Microsoft.Web/sites@2024-11-01' = {
           name: 'ConnectionStrings:CosmosUri'
           value: 'https://${cosmosDbName}.documents.azure.com:443/'
         }
-        {
-          name: 'ConnectionStrings:CosmosKey'
-          value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/${cosmosKeySecretName})'
-        }
       ]
     }
+  }
+}
+
+resource serviceBusSenderRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(votingWebApp.name, serviceBus.id, 'Azure Service Bus Data Sender')
+  scope: serviceBus
+  properties: {
+    roleDefinitionId: azureServiceBusDataSenderRole
+    principalId: votingWebApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Assign Role to allow Read data from cosmos DB
+resource cosmosDBDataReaderRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = {
+  name: guid(resourceGroup().id, cosmosDatabaseAccount.id, 'cosmosDBDataReaderRoleV2')
+  parent: cosmosDatabaseAccount
+  properties: {
+    principalId: votingWebApp.identity.principalId
+    roleDefinitionId: '/${subscription().id}/resourceGroups/${resourceGroup().name}/providers/Microsoft.DocumentDB/databaseAccounts/${cosmosDatabaseAccount.name}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000001'
+    scope: cosmosDatabaseAccount.id
+  }
+}
+
+resource  cosmosDBAccountReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(votingWebApp.name, serviceBus.id, 'Cosmos DB Account Reader')
+  scope: serviceBus
+  properties: {
+    roleDefinitionId: cosmosDBAccountReaderRole
+    principalId: votingWebApp.identity.principalId
+    principalType: 'ServicePrincipal'
   }
 }
 
@@ -561,4 +620,3 @@ output votingFunctionName string = votingFunctionName
 output votingWebAppIdentityPrincipalId string = votingWebApp.identity.principalId
 output votingApiIdentityPrincipalId string = votingApiApp.identity.principalId
 output votingCounterFunctionIdentityPrincipalId string = votingFunction.identity.principalId
-

@@ -130,7 +130,6 @@ resource sqlServerDatabase 'Microsoft.Sql/servers/databases@2024-11-01-preview' 
   }
 }
 
-
 resource sqlServerAdmin 'Microsoft.Sql/servers/administrators@2024-11-01-preview' = {
   parent: sqlServer
   name: 'activeDirectory'
@@ -154,30 +153,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2024-11-01' = {
       name: 'standard'
     }
     tenantId: subscription().tenantId    
-  }
-}
-
-resource keyVaultCosmosKey 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
-  parent: keyVault
-  name: 'CosmosKey'
-  properties: {
-    value: cosmos.listKeys().primaryMasterKey 
-  }
-}
-
-resource keyVaultServiceBusListenerConnectionString 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
-  parent: keyVault
-  name: 'ServiceBusListenerConnectionString'
-  properties: {
-    value: 'Endpoint=sb://${serviceBusName}.servicebus.windows.net/;SharedAccessKeyName=${serviceBusListenerSharedAccessKey.name};SharedAccessKey=${listKeys(serviceBusListenerSharedAccessKey.id, '2021-11-01').primaryKey}'
-  }
-}
-
-resource keyVaultServiceBusSenderConnectionString 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
-  parent: keyVault
-  name: 'ServiceBusSenderConnectionString'
-  properties: {
-    value: 'Endpoint=sb://${serviceBusName}.servicebus.windows.net/;SharedAccessKeyName=${serviceBusSenderSharedAccessKey.name};SharedAccessKey=${listKeys(serviceBusSenderSharedAccessKey.id, '2021-11-01').primaryKey}'
   }
 }
 
@@ -251,7 +226,6 @@ resource resourcesStorageAccount 'Microsoft.Storage/storageAccounts@2025-01-01' 
     accessTier: 'Hot'
   }
 }
-
 
 resource resourcesStorageAccountDefaultResourcesContainerName 'Microsoft.Storage/storageAccounts/blobServices/containers@2025-01-01' = {
   name: '${resourcesStorageAccountName}/default/${resourcesContainerName}'
