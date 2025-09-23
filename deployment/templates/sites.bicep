@@ -78,6 +78,13 @@ var keyVaultCryptoUserRole = subscriptionResourceId(
   '12338af0-0e69-4776-bea7-57ae8d297424'
 ) //Key Vault Crypto User. Perform cryptographic operations using keys. 
 
+@description('Built-in role definition ID for Storage Blob Data Owner')
+var azureStorageBlobDataOwnerRole = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
+) // Storage Blob Data Owner
+
+
 resource cosmosDatabaseAccount 'Microsoft.DocumentDB/databaseAccounts@2025-04-15' existing = {
   name: cosmosDbName
 }
@@ -424,8 +431,8 @@ resource votingFunction 'Microsoft.Web/sites@2024-11-01' = {
           value: 'Server=${sqlServerName}${environment().suffixes.sqlServerHostname},1433;Database=${sqlDatabaseName};'
         }
         {
-          name: 'AzureWebJobsStorage'
-          value: votingStorage.listKeys().keys[0].value
+           name: 'AzureWebJobsStorage__accountName	'
+           value: votingStorage.name
         }
       ]
     }
@@ -437,6 +444,16 @@ resource serviceBusDataReceiverRoleAssignment 'Microsoft.Authorization/roleAssig
   scope: serviceBus
   properties: {
     roleDefinitionId: azureServiceBusDataReceiverRole
+    principalId: votingFunction.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource storageBlobDataOwnerRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(votingWebApp.name, votingStorage.id, 'Storage Blob Data Owner')
+  scope: votingStorage
+  properties: {
+    roleDefinitionId: azureStorageBlobDataOwnerRole
     principalId: votingFunction.identity.principalId
     principalType: 'ServicePrincipal'
   }
