@@ -443,7 +443,7 @@ Most of the Azure resources deployed in the prior steps will incur ongoing charg
    > Because this reference implementation enables soft delete on Key Vault, execute a purge so your next deployment of this implementation doesn't run into a naming conflict.
 
    ```bash
-   az keyvault purge -n $KEYVAULT_NAME 
+   az keyvault purge -n $KEYVAULT_NAME
    ```
 
 1. If any temporary changes were made to Entra ID or Azure RBAC permissions consider removing those as well.
