@@ -220,6 +220,8 @@ App Service Environment must always be deployed in its own subnet in the enterpr
     echo $KEYVAULT_NAME
     export RESOURCES_STORAGE_ACCOUNT=$(az deployment group show -g rg-app-service-environments-centralus -n services --query properties.outputs.resourcesStorageAccountName.value -o tsv)
     echo $RESOURCES_STORAGE_ACCOUNT
+    export RESOURCES_STORAGE_ACCOUNT_FUNCTION_APP=$(az deployment group show -g rg-app-service-environments-centralus -n services --query properties.outputs.resourcesStorageAccountFunctionAppName.value -o tsv)
+    echo $RESOURCES_STORAGE_ACCOUNT_FUNCTION_APP
     export RESOURCES_CONTAINER_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n services --query properties.outputs.resourcesContainerName.value -o tsv)
     echo $RESOURCES_CONTAINER_NAME
     export SERVICEBUS_NAMESPACE_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n services --query properties.outputs.serviceBusName.value -o tsv)
@@ -243,7 +245,7 @@ App Service Environment must always be deployed in its own subnet in the enterpr
    # [This takes about thirty minutes to run.]
    # For HA change zoneRedundant to true
     az deployment group create -g rg-app-service-environments-centralus --template-file templates/sites.bicep -n sites --parameters aseName=$ASE_NAME \
-    vnetName=$VNET_NAME cosmosDbName=$COSMOSDB_NAME sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME serviceBusNamespace=$SERVICEBUS_NAMESPACE_NAME  storageAccountName=$RESOURCES_STORAGE_ACCOUNT\
+    vnetName=$VNET_NAME cosmosDbName=$COSMOSDB_NAME sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME serviceBusNamespace=$SERVICEBUS_NAMESPACE_NAME  storageAccountName=$RESOURCES_STORAGE_ACCOUNT_FUNCTION_APP \
     aseDnsSuffix=$ASE_DNS_SUFFIX  zoneRedundant=false
 	
     export INTERNAL_APP1_URL=$(az deployment group show -g rg-app-service-environments-centralus -n sites --query properties.outputs.votingAppUrl.value -o tsv) && \
@@ -315,7 +317,7 @@ EOF
    ```bash
     # [This takes about ten minutes to run.]
     az deployment group create -g rg-app-service-environments-centralus --template-file templates/privateEndpoints.bicep --parameters SubId=$SUBID \
-    vnetName=$VNET_NAME cosmosDBName=$COSMOSDB_NAME sqlName=$SQL_SERVER akvName=$KEYVAULT_NAME sbName=$SERVICEBUS_NAMESPACE_NAME 
+    vnetName=$VNET_NAME cosmosDBName=$COSMOSDB_NAME sqlName=$SQL_SERVER akvName=$KEYVAULT_NAME sbName=$SERVICEBUS_NAMESPACE_NAME storageAccountName=$RESOURCES_STORAGE_ACCOUNT_FUNCTION_APP
    ```
 
 ### 13. __Run in PowerShell__ - Add App Gateway certificate to the local machine - must use elevated permissions

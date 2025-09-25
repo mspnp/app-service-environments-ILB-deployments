@@ -10,7 +10,7 @@ jobs:
       - name: Checkout specific branch
         uses: actions/checkout@v2
         with:
-          ref: 'update/maintenance-6'
+          ref: 'update/maintenance-7'
 
       - name: Setup .NET Core 9
         uses: actions/setup-dotnet@v1

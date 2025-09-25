@@ -21,6 +21,9 @@ param cosmosDBName string
 @description('The name of the existing keyvault namespace for creating the private endpoint.')
 param akvName string
 
+@description('The name of the existing storage account for creating the private endpoint.')
+param storageAccountName string
+
 @description('The ip address prefix that services subnet will use.')
 param subnetAddressPrefix string = '10.0.50.0/24'
 
@@ -34,7 +37,7 @@ param sbId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().na
 param sqlServerId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.Sql/servers/${sqlName}'
 param cosmosId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.DocumentDB/databaseAccounts/${cosmosDBName}'
 param akvId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.KeyVault/vaults/${akvName}'
-
+param storageId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.Storage/storageAccounts/${storageAccountName}'
 
 //1. Create a private endpoint for the SQL Server
 
@@ -214,8 +217,6 @@ resource privateDnsZoneARecordSB 'Microsoft.Network/privateDnsZones/A@2024-06-01
   }
 }
 
-
-
 //3. Create a private endpoint for the Cosmos DB
 
 //Create variables for the private endpoint
@@ -293,10 +294,6 @@ resource privateDnsZoneARecordCosmos 'Microsoft.Network/privateDnsZones/A@2024-0
     ]
   }
 }
-
-
-
-
 
 //4. Create a private endpoint for the Keyvault
 
@@ -376,3 +373,84 @@ resource privateDnsZoneARecordAKV 'Microsoft.Network/privateDnsZones/A@2024-06-0
   }
 }
 
+// 5. Create a private endpoint for the Storage Account
+
+//Create variables for the private endpoint
+var storageHostName = '.blob.${environment().suffixes.storage}'
+var privateEndpointStorageName = 'voting-Storage-PE-${servicesSubnetName}'
+var privateDnsZoneStorageName = 'privatelink${storageHostName}'
+var pvtEndpointDnsGroupStorageName = '${privateEndpointStorageName}/storagednsgroupname'
+
+// Create the private endpoint
+resource privateEndpointStorage 'Microsoft.Network/privateEndpoints@2024-07-01' = {
+  name: privateEndpointStorageName
+  location: location
+  properties: {
+    subnet: {
+      id: servicesSubnet.id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: privateEndpointStorageName
+        properties: {
+          privateLinkServiceId: storageId
+          groupIds: [
+            'blob'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+// Create the private DNS zone
+resource privateDnsZoneStorage 'Microsoft.Network/privateDnsZones@2024-06-01' = {
+  name: privateDnsZoneStorageName
+  location: 'global'
+  properties: {}
+}
+
+// Link the DNS zone to the VNet
+resource privateDnsZoneLinkStorage 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+  parent: privateDnsZoneStorage
+  name: '${privateDnsZoneStorageName}-link'
+  location: 'global'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: vnetId
+    }
+  }
+}
+
+// Create the DNS zone group for the private endpoint
+resource pvtEndpointDnsGroupStorage 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-07-01' = {
+  name: pvtEndpointDnsGroupStorageName
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'config1'
+        properties: {
+          privateDnsZoneId: privateDnsZoneStorage.id
+        }
+      }
+    ]
+  }
+  dependsOn: [
+    privateEndpointStorage
+  ]
+}
+
+// Optional: A record for the private endpoint
+resource privateDnsZoneARecordStorage 'Microsoft.Network/privateDnsZones/A@2024-06-01' = {
+  parent: privateDnsZoneStorage
+  name: '${privateEndpointStorageName}.${privateDnsZoneStorageName}'
+  properties: {
+    ttl: 3600
+    aRecords: [
+      {
+        ipv4Address: privateEndpointStorage.properties.customDnsConfigs[0].ipAddresses[0]
+      }
+    ]
+  }
+}
