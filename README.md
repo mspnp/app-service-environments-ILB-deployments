@@ -28,7 +28,7 @@ The following services are key to locking down the App Service Environment in th
 
 * __Azure Key Vault__ stores any secrets and credentials required by the apps. Use this option over storing secrets directly in the application.
 
-* __GitHub Actions__ provides continuous integration and continuous deployment capabilities in this architecture. Because the App Service Environment is in the virtual network, a virtual machine is used as a jumpbox inside the virtual network to deploy apps in the App Service plans. The action builds the apps outside the virtual network. For enhanced security and seamless RDP/SSH connectivity, consider using Azure Bastion instead of a traditional jumpbox. Azure Bastion provides secure and seamless RDP and SSH connectivity to virtual machines directly through the Azure portal without exposing public IP addresses, reducing the attack surface and eliminating the need to manage and secure jumpbox credentials or open inbound ports.
+* __GitHub Actions__ provides continuous integration and continuous deployment capabilities in this architecture. Because the App Service Environment is in the virtual network, a virtual machine is used as a jumpbox inside the virtual network to deploy apps in the App Service plans. The action uses a self-hosted agent inside the jumpbox to build and deploy.
 
 ## Deploy the reference implementation
 
@@ -44,12 +44,6 @@ App Service Environment must always be deployed in its own subnet in the enterpr
 
 * **jq** tool installed for your platform:
   `sudo apt-get install jq`
-
-* **dig** tool for your platform - Check that you are able to get the public IP, and install dig tool:
-  ```
-  sudo apt install dnsutils
-  dig @resolver1.opendns.com ANY myip.opendns.com +short
-  ```
 
 1. An Azure subscription.
 
@@ -187,7 +181,8 @@ App Service Environment must always be deployed in its own subnet in the enterpr
    ```
 
 ### 7. Deploy Jumpbox
-   This module provisions a Jumpbox virtual machine to facilitate secure administrative access to resources within the virtual network, including the App Service Environment.
+   This module provisions a Jumpbox virtual machine to facilitate secure administrative access to resources within the virtual network, including the App Service Environment.  
+   Later on, the Jumpbox will host a GitHub self-hosted runner. This allows you to run your own runners and customize the environment used for executing jobs in your GitHub Actions workflows.
 
    ```bash
    # [This takes about two minutes to run.]
