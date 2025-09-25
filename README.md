@@ -317,7 +317,7 @@ EOF
    ```bash
     # [This takes about ten minutes to run.]
     az deployment group create -g rg-app-service-environments-centralus --template-file templates/privateEndpoints.bicep --parameters SubId=$SUBID \
-    vnetName=$VNET_NAME cosmosDBName=$COSMOSDB_NAME sqlName=$SQL_SERVER akvName=$KEYVAULT_NAME sbName=$SERVICEBUS_NAMESPACE_NAME 
+    vnetName=$VNET_NAME cosmosDBName=$COSMOSDB_NAME sqlName=$SQL_SERVER akvName=$KEYVAULT_NAME sbName=$SERVICEBUS_NAMESPACE_NAME storageAccountName=$RESOURCES_STORAGE_ACCOUNT_FUNCTION_APP
    ```
 
 ### 13. __Run in PowerShell__ - Add App Gateway certificate to the local machine - must use elevated permissions
