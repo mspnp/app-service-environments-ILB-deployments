@@ -22,23 +22,6 @@ Connect the Jumpbox Virtual Machine through Azure Bastion in Azure Portal. Use t
 
    - Git (https://git-scm.com/downloads)
 
-# Set Up Github Actions Variables
-
-1. Go to your repository on GitHub.
-2. Click on Settings.
-3. In the left sidebar, click Variables under the Secrets and variables section.
-4. Click Actions.
-5. Click New variable.
-6. Set up the following variables
-
-* FUNCTION_APPPATH - eg. "code/function-app-ri/VoteCounter"
-* BUILDCONFIGURATION - eg. "Release"
-* FUNCTION_APP_NAME - App Service name for Voting Function App
-* VOTINGDATA_APPPATH - eg. "code/web-app-ri/VotingData"
-* VOTINGDATA_WEB_APP_NAME - App Service name for Voting API App
-* VOTINGWEB_APPPATH - eg. "code/web-app-ri/VotingWeb"
-* VOTINGWEB_APP_NAME - App Service name for Voting Web App
-
 # Set Up Github Actions Secret
 
 Create and manage user-assigned managed identities to allow GitHub Actions to deploy the apps. The Bicep template also assigns the Contributor role to the resource group and federates the identity to trust on GitHub. [More information here](https://learn.microsoft.com/azure/developer/github/connect-from-azure-openid-connect).

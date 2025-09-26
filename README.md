@@ -196,7 +196,7 @@ App Service Environment must always be deployed in its own subnet in the enterpr
    ```
 
 ### 8. Deploy services: cosmos, sql, servicebus and storage
-   This module provisions the essential backend services required. It includes a Cosmos DB instance for distributed caching, a secure SQL Server and database for relational data, and a Key Vault for managing secrets using role-based access control. A premium-tier Service Bus is configured to enable reliable messaging between application components, while a storage account and blob container provide scalable storage for static resources. All services are deployed with public network access disabled where applicable, ensuring a secure and private infrastructure.
+   This module provisions the essential backend services required for the application. It includes a Cosmos DB instance for distributed caching, a secure SQL Server and database for relational data, and an Azure Key Vault for managing secrets using role-based access control. A premium-tier Service Bus is configured to enable reliable messaging between application components. Additionally, a storage account with a blob container provides scalable storage for static resources, while a second storage account is designated for use by the Function App as Azure WebJob storage. All services are deployed with public network access disabled where applicable, ensuring a secure and private infrastructure.
 
    ```bash
    # [This takes about five minutes to run.]
@@ -224,6 +224,7 @@ App Service Environment must always be deployed in its own subnet in the enterpr
    ```
 
 ### 9. Uploads image to the storage account
+    Upload images to be used on the web page. These images are static web resources.
 
    ```bash
    # [This takes less than one minute to run.]
@@ -307,7 +308,7 @@ EOF
    echo $APPGW_PUBLIC_IP
    ```
 ### 12. Deploy private endpoints
-   This module establishes secure, private connectivity to essential Azure services by provisioning private endpoints within a dedicated subnet. It includes endpoints for SQL Server, Service Bus, Cosmos DB, and Key Vault, each configured with corresponding private DNS zones to enable internal name resolution. The setup ensures that traffic to these services remains within the Azure backbone, eliminating exposure to the public internet. Network security groups and DNS zone groups are used to enforce access control and maintain reliable service discovery, forming a critical part of the secure infrastructure for the App Service Environment
+   This module establishes secure, private connectivity to essential Azure services by provisioning private endpoints within a dedicated subnet. It includes endpoints for SQL Server, Service Bus, Cosmos DB, Storage Account, and Key Vault, each configured with corresponding private DNS zones to enable internal name resolution. The setup ensures that traffic to these services remains within the Azure backbone, eliminating exposure to the public internet. Network security groups and DNS zone groups are used to enforce access control and maintain reliable service discovery, forming a critical part of the secure infrastructure for the App Service Environment
 
    ```bash
     # [This takes about ten minutes to run.]
@@ -401,18 +402,36 @@ This is the table used by the application
      echo $SQL
     ```
 
-## Publish ASP.NET Core Web, API, and Function Applications
+## :ship: Publish ASP.NET Core Web, API, and Function Applications
 
-1. [Prepare Jumpbox and Github Actions](./prepare_jumpbox.md).
+1. [Prepare Jumpbox to Run GitHub Action self-hosted runner](./prepare_jumpbox.md).
 
-2. Run Github Actions to Deploy Web Apps, API, and Function:
+2. Set Up Github Actions Variables
+
+* Go to your repository on GitHub.
+* Click on Settings.
+* In the left sidebar, click Variables under the Secrets and variables section.
+* Click Actions.
+* Click New variable.
+* Set up the following variables
+   * FUNCTION_APPPATH - eg. "code/function-app-ri/VoteCounter"
+   * BUILDCONFIGURATION - eg. "Release"
+   * FUNCTION_APP_NAME - App Service name for Voting Function App
+   * VOTINGDATA_APPPATH - eg. "code/web-app-ri/VotingData"
+   * VOTINGDATA_WEB_APP_NAME - App Service name for Voting API App
+   * VOTINGWEB_APPPATH - eg. "code/web-app-ri/VotingWeb"
+   * VOTINGWEB_APP_NAME - App Service name for Voting Web App
+
+3. Run Github Actions to Deploy Web Apps, API, and Function:
   * Go to your GitHub Repository.
   * Click on the "Actions" tab.
   * For each app, run the corresponding workflow from the master branch:
     - For the Voting Web App, run the workflow named `Build and Deploy VotingWeb App`.
     - For the Voting API, run the workflow named `Build and Deploy VotingData App`.
     - For the Function App, run the workflow named `Build and Deploy Function App`.
-3. At this point you should be able to test the application:  
+
+## :wink: Check Deploy
+ At this point you should be able to test the application:  
     Open: https://votingapp.contoso.com  
 
 _NOTE: You may see a certificate validation error in your browser because this deployment uses a self-signed certificate for demonstration purposes. In production environments, you should obtain and use a certificate from a trusted certificate authority (CA) to avoid these warnings and ensure secure connections._
