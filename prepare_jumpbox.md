@@ -51,4 +51,4 @@ echo $AZURE_SUBSCRIPTION_ID
 3. Go to Actions > Runners
 4. Click on new Self Hosted Runner and follow the instructions on the jumpbox. Keep the Agent Running. Execute the command in a new PowerShell console to take the latest environment variables related to the recently installed tools.
 
-[Return to README.md >](./README.md#publish-aspnet-core-web-api-and-function-applications)
+[Return to README.md >](./README.md#ship-publish-aspnet-core-web-api-and-function-applications)
