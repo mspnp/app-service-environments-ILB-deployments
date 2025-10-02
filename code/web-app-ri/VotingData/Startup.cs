@@ -34,7 +34,7 @@ namespace VotingData
             services.AddDbContext<VotingDBContext>(options => options.UseSqlServer(connection).AddInterceptors(new AppServiceIdentityInterceptor()));
 
             services.AddHealthChecks()
-                    .AddDbContextCheck<VotingDBContext>("VotingDBContext");
+                    .AddDbContextCheck<VotingDBContext>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
