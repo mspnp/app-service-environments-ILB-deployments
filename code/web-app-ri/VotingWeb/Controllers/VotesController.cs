@@ -46,8 +46,7 @@ namespace VotingWeb.Controllers
             }
         }
 
-        [HttpPut("{name}")]
-        [Route("[action]/{name}")]
+        [HttpPut("[action]/{name}")]
         public async Task<IActionResult> Add(string name)
         {
             try
@@ -68,8 +67,7 @@ namespace VotingWeb.Controllers
             }
         }
 
-        [HttpPut("{id}")]
-        [Route("[action]/{id}")]
+        [HttpPut("[action]/{id}")]
         public async Task<IActionResult> Vote(int id)
         {
             try

@@ -33,7 +33,8 @@ namespace VotingData
             var connection = Configuration.GetConnectionString("SqlDbConnection");
             services.AddDbContext<VotingDBContext>(options => options.UseSqlServer(connection).AddInterceptors(new AppServiceIdentityInterceptor()));
 
-            services.AddHealthChecks();
+            services.AddHealthChecks()
+                    .AddDbContextCheck<VotingDBContext>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

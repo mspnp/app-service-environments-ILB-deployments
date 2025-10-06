@@ -28,7 +28,7 @@ The following services are key to locking down the App Service Environment in th
 
 * __Azure Key Vault__ stores any secrets and credentials required by the apps. Use this option over storing secrets directly in the application.
 
-* __GitHub Actions__ provides continuous integration and continuous deployment capabilities in this architecture. Because the App Service Environment is in the virtual network, a virtual machine is used as a jumpbox inside the virtual network to deploy apps in the App Service plans. The action builds the apps outside the virtual network. For enhanced security and seamless RDP/SSH connectivity, consider using Azure Bastion instead of a traditional jumpbox. Azure Bastion provides secure and seamless RDP and SSH connectivity to virtual machines directly through the Azure portal without exposing public IP addresses, reducing the attack surface and eliminating the need to manage and secure jumpbox credentials or open inbound ports.
+* __GitHub Actions__ provides continuous integration and continuous deployment capabilities in this architecture. Because the App Service Environment is in the virtual network, a virtual machine is used as a jumpbox inside the virtual network to deploy apps in the App Service plans. The action uses a self-hosted agent inside the jumpbox to build and deploy.
 
 ## Deploy the reference implementation
 
@@ -44,12 +44,6 @@ App Service Environment must always be deployed in its own subnet in the enterpr
 
 * **jq** tool installed for your platform:
   `sudo apt-get install jq`
-
-* **dig** tool for your platform - Check that you are able to get the public IP, and install dig tool:
-  ```
-  sudo apt install dnsutils
-  dig @resolver1.opendns.com ANY myip.opendns.com +short
-  ```
 
 1. An Azure subscription.
 
@@ -92,7 +86,7 @@ App Service Environment must always be deployed in its own subnet in the enterpr
    export APPGW_APP1_URL=votingapp.contoso.com
    export APPGW_APP2_URL=testapp.contoso.com
    ```
-1. Run the following commands after providing values for the variables..
+1. Run the following commands after providing values for the variables.
 
    ```bash
    export SQLADMINUSER=user-admin
@@ -129,12 +123,16 @@ App Service Environment must always be deployed in its own subnet in the enterpr
 
 ### 2. Create the resource group
 
+   The resource group created will contain all the resources included in the current reference implementation.
+
    ```bash
    # [This takes less than one minute to run.]
    az group create -n rg-app-service-environments-centralus -l centralus
    ```
 
 ### 3. Deploy global network related resources
+
+   This module sets up the foundational networking infrastructure required for deploying an App Service Environment (ASE) in Azure. It begins by provisioning a dedicated virtual network (VNet) with a defined IP address space to ensure isolation and control over traffic flow. 
 
    ```bash
    # [This takes less than one minute to run.]
@@ -147,6 +145,7 @@ App Service Environment must always be deployed in its own subnet in the enterpr
    ```
 
 ### 4. Application Service Environment (ASE)
+   This module provisions the core components required to deploy an App Service Environment v3 (ASEv3) within a secure and isolated subnet. It begins by defining a network security group to control inbound traffic, allowing only web traffic from an application gateway and denying all other access. A dedicated subnet is then created within the specified virtual network, configured with routing, security, and delegation to support ASE deployment. Finally, the ASEv3 instance is deployed with customizable parameters for host count and zone redundancy, enabling scalable and resilient hosting of web applications.
 
    ```bash
    # [This takes about ten minutes to run.]
@@ -166,6 +165,7 @@ App Service Environment must always be deployed in its own subnet in the enterpr
    ```
 
 ### 5. Deploy Firewall
+   This module provisions an Azure Firewall to enhance the security posture of the App Service Environment deployment. A static public IP address is allocated to the firewall, enabling external connectivity. This setup ensures that the ASE operates within a secure, monitored, and well-governed network boundary.
 
    ```bash
    # [This takes about ten minutes to run.]
@@ -173,6 +173,7 @@ App Service Environment must always be deployed in its own subnet in the enterpr
    ```
 
 ### 6. Deploy the private DNS
+   This module configures private DNS resolution for the internal load balancer (ILB) of the App Service Environment. These records ensure that internal applications and deployment endpoints are resolvable within the virtual network. The DNS zone is linked to the ASE's VNet, enabling seamless name resolution for services hosted in the environment.
 
    ```bash
    # [This takes about two minutes to run.]
@@ -180,6 +181,8 @@ App Service Environment must always be deployed in its own subnet in the enterpr
    ```
 
 ### 7. Deploy Jumpbox
+   This module provisions a Jumpbox virtual machine to facilitate secure administrative access to resources within the virtual network, including the App Service Environment.  
+   Later on, the Jumpbox will host a GitHub self-hosted runner. This allows you to run your own runners and customize the environment used for executing jobs in your GitHub Actions workflows.
 
    ```bash
    # [This takes about two minutes to run.]
@@ -193,6 +196,7 @@ App Service Environment must always be deployed in its own subnet in the enterpr
    ```
 
 ### 8. Deploy services: cosmos, sql, servicebus and storage
+   This module provisions the essential backend services required for the application. It includes a Cosmos DB instance for distributed caching, a secure SQL Server and database for relational data, and an Azure Key Vault for managing secrets using role-based access control. A premium-tier Service Bus is configured to enable reliable messaging between application components. Additionally, a storage account with a blob container provides scalable storage for static resources, while a second storage account is designated for use by the Function App as Azure WebJob storage. All services are deployed with public network access disabled where applicable, ensuring a secure and private infrastructure.
 
    ```bash
    # [This takes about five minutes to run.]
@@ -211,6 +215,8 @@ App Service Environment must always be deployed in its own subnet in the enterpr
     echo $KEYVAULT_NAME
     export RESOURCES_STORAGE_ACCOUNT=$(az deployment group show -g rg-app-service-environments-centralus -n services --query properties.outputs.resourcesStorageAccountName.value -o tsv)
     echo $RESOURCES_STORAGE_ACCOUNT
+    export RESOURCES_STORAGE_ACCOUNT_FUNCTION_APP=$(az deployment group show -g rg-app-service-environments-centralus -n services --query properties.outputs.resourcesStorageAccountFunctionAppName.value -o tsv)
+    echo $RESOURCES_STORAGE_ACCOUNT_FUNCTION_APP
     export RESOURCES_CONTAINER_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n services --query properties.outputs.resourcesContainerName.value -o tsv)
     echo $RESOURCES_CONTAINER_NAME
     export SERVICEBUS_NAMESPACE_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n services --query properties.outputs.serviceBusName.value -o tsv)
@@ -218,6 +224,7 @@ App Service Environment must always be deployed in its own subnet in the enterpr
    ```
 
 ### 9. Uploads image to the storage account
+    Upload images to be used on the web page. These images are static web resources.
 
    ```bash
    # [This takes less than one minute to run.]
@@ -228,12 +235,13 @@ App Service Environment must always be deployed in its own subnet in the enterpr
    ```
 
 ### 10.  Create the app service plans and the sites
+   This module orchestrates the deployment of the core application components within the App Service Environment. It provisions four isolated apps—web, API, function, and test—each with dedicated hosting plans and integrated monitoring via Application Insights and Log Analytics. A premium Redis Cache is deployed in a secure subnet with Entra ID authentication and custom network rules. The apps are securely connected to backend services including Cosmos DB, SQL Database, Service Bus, and a Storage Account, using managed identities and role assignments to enforce least-privilege access. This setup ensures a scalable, secure, and observable application landscape, fully integrated within the ASE infrastructure
 
    ```bash
    # [This takes about thirty minutes to run.]
    # For HA change zoneRedundant to true
     az deployment group create -g rg-app-service-environments-centralus --template-file templates/sites.bicep -n sites --parameters aseName=$ASE_NAME \
-    vnetName=$VNET_NAME cosmosDbName=$COSMOSDB_NAME sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME serviceBusNamespace=$SERVICEBUS_NAMESPACE_NAME  storageAccountName=$RESOURCES_STORAGE_ACCOUNT \
+    vnetName=$VNET_NAME cosmosDbName=$COSMOSDB_NAME sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME serviceBusNamespace=$SERVICEBUS_NAMESPACE_NAME  storageAccountName=$RESOURCES_STORAGE_ACCOUNT_FUNCTION_APP \
     aseDnsSuffix=$ASE_DNS_SUFFIX  zoneRedundant=false
 	
     export INTERNAL_APP1_URL=$(az deployment group show -g rg-app-service-environments-centralus -n sites --query properties.outputs.votingAppUrl.value -o tsv) && \
@@ -253,20 +261,9 @@ App Service Environment must always be deployed in its own subnet in the enterpr
     echo $VOTING_API_PRINCIPAL_ID
    ```
 
-### 11. Deploy RBAC for resources after Microsoft Entra ID propagation
-
-   ```bash
-    until az ad sp show --id ${VOTING_WEB_APP_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for Microsoft Entra ID propagation" && sleep 5; done
-    until az ad sp show --id ${VOTING_API_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for Microsoft Entra ID propagation" && sleep 5; done
-    until az ad sp show --id ${VOTING_COUNTER_FUNCTION_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for Microsoft Entra ID propagation" && sleep 5; done
-    
-    # [This takes less than one minute to run.]
-    az deployment group create -g rg-app-service-environments-centralus  --template-file templates/rbac.bicep \
-      --parameters votingWebAppIdentityPrincipalId=$VOTING_WEB_APP_PRINCIPAL_ID votingCounterFunctionIdentityPrincipalId=$VOTING_COUNTER_FUNCTION_PRINCIPAL_ID keyVaultName=$KEYVAULT_NAME
-   ```
-
-### 12. Deploy and Configure App Gateway with Multiple Backend Apps and Certificates
-
+### 11. Deploy and Configure App Gateway with Multiple Backend Apps and Certificates
+   This module provisions an Azure Application Gateway with integrated Web Application Firewall (WAF v2) to securely manage and route external traffic to backend applications hosted in the environment. It sets up a dedicated subnet and network security group, configures a static public IP, and enables autoscaling for performance flexibility. The gateway is dynamically configured to support multiple applications, each with its own backend pool, HTTPS listener, SSL certificate, health probe, and routing rule. This setup ensures secure, scalable, and resilient traffic management with centralized control and monitoring.
+   
    ```bash
     # Note: This command will overwrite 'appgwApps.parameters.json' if it already exists.
 cat <<EOF > appgwApps.parameters.json
@@ -310,15 +307,16 @@ EOF
    export APPGW_PUBLIC_IP=$(az deployment group show -g rg-app-service-environments-centralus -n appgw --query properties.outputs.appGwPublicIpAddress.value -o tsv)
    echo $APPGW_PUBLIC_IP
    ```
-### 13. Deploy private endpoints
+### 12. Deploy private endpoints
+   This module establishes secure, private connectivity to essential Azure services by provisioning private endpoints within a dedicated subnet. It includes endpoints for SQL Server, Service Bus, Cosmos DB, Storage Account, and Key Vault, each configured with corresponding private DNS zones to enable internal name resolution. The setup ensures that traffic to these services remains within the Azure backbone, eliminating exposure to the public internet. Network security groups and DNS zone groups are used to enforce access control and maintain reliable service discovery, forming a critical part of the secure infrastructure for the App Service Environment
 
    ```bash
     # [This takes about ten minutes to run.]
     az deployment group create -g rg-app-service-environments-centralus --template-file templates/privateEndpoints.bicep --parameters SubId=$SUBID \
-    vnetName=$VNET_NAME cosmosDBName=$COSMOSDB_NAME sqlName=$SQL_SERVER akvName=$KEYVAULT_NAME sbName=$SERVICEBUS_NAMESPACE_NAME 
+    vnetName=$VNET_NAME cosmosDBName=$COSMOSDB_NAME sqlName=$SQL_SERVER akvName=$KEYVAULT_NAME sbName=$SERVICEBUS_NAMESPACE_NAME storageAccountName=$RESOURCES_STORAGE_ACCOUNT_FUNCTION_APP
    ```
 
-### 14. __Run in PowerShell__ - Add App Gateway certificate to the local machine - must use elevated permissions
+### 13. __Run in PowerShell__ - Add App Gateway certificate to the local machine - must use elevated permissions
 
    ```PowerShell
     # Replace $PFX_PASSWORD with the value. That variables don't exist in PowerShell.
@@ -329,7 +327,7 @@ EOF
     certutil -f -p $PFX_PASSWORD -importpfx appgw_2.pfx
    ```
 
-### 15. Add lines in your Host file to resolve name  
+### 14. Add lines in your Host file to resolve name  
 
   Open `C:/windows/system32/drivers/etc/hosts` file as administrator. Then, Add the following resulted lines at the end of the file.
 
@@ -404,18 +402,36 @@ This is the table used by the application
      echo $SQL
     ```
 
-## Publish ASP.NET Core Web, API, and Function Applications
+## :ship: Publish ASP.NET Core Web, API, and Function Applications
 
-1. [Prepare Jumpbox and Github Actions](./prepare_jumpbox.md).
+1. [Prepare Jumpbox to Run GitHub Action self-hosted runner](./prepare_jumpbox.md).
 
-2. Run Github Actions to Deploy Web Apps, API, and Function:
+2. Set Up Github Actions Variables
+
+* Go to your repository on GitHub.
+* Click on Settings.
+* In the left sidebar, click Variables under the Secrets and variables section.
+* Click Actions.
+* Click New variable.
+* Set up the following variables
+   * FUNCTION_APPPATH - eg. "code/function-app-ri/VoteCounter"
+   * BUILDCONFIGURATION - eg. "Release"
+   * FUNCTION_APP_NAME - App Service name for Voting Function App
+   * VOTINGDATA_APPPATH - eg. "code/web-app-ri/VotingData"
+   * VOTINGDATA_WEB_APP_NAME - App Service name for Voting API App
+   * VOTINGWEB_APPPATH - eg. "code/web-app-ri/VotingWeb"
+   * VOTINGWEB_APP_NAME - App Service name for Voting Web App
+
+3. Run Github Actions to Deploy Web Apps, API, and Function:
   * Go to your GitHub Repository.
   * Click on the "Actions" tab.
   * For each app, run the corresponding workflow from the master branch:
     - For the Voting Web App, run the workflow named `Build and Deploy VotingWeb App`.
     - For the Voting API, run the workflow named `Build and Deploy VotingData App`.
     - For the Function App, run the workflow named `Build and Deploy Function App`.
-3. At this point you should be able to test the application:  
+
+## :wink: Check Deploy
+ At this point you should be able to test the application:  
     Open: https://votingapp.contoso.com  
 
 _NOTE: You may see a certificate validation error in your browser because this deployment uses a self-signed certificate for demonstration purposes. In production environments, you should obtain and use a certificate from a trusted certificate authority (CA) to avoid these warnings and ensure secure connections._

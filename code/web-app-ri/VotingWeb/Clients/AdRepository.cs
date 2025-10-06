@@ -2,7 +2,6 @@
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using StackExchange.Redis;
@@ -15,6 +14,7 @@ using VotingWeb.Exceptions;
 using VotingWeb.Interfaces;
 using VotingWeb.Models;
 
+
 namespace VotingWeb.Clients
 {
     public class AdRepository : IAdRepository
@@ -25,12 +25,11 @@ namespace VotingWeb.Clients
         const string databaseId = "cacheDB";
         const string containerId = "cacheContainer";
 
-        public AdRepository(CosmosClient cosmosClient, IConfiguration config)
+        public AdRepository(IDatabase _cache, CosmosClient cosmosClient, IConfiguration config)
         {
             try
             {
-                Lazy<ConnectionMultiplexer> lazyConnection = GetLazyConnection(config.GetValue<string>("ConnectionStrings:RedisConnectionString"));
-                cache = lazyConnection.Value.GetDatabase();
+                cache = _cache;
 
                 client = cosmosClient;
 
@@ -45,14 +44,6 @@ namespace VotingWeb.Clients
             {
                 throw new AdRepositoryException("Cosmos initialization error", ex);
             }
-        }
-
-        private static Lazy<ConnectionMultiplexer> GetLazyConnection(string connectionString)
-        {
-            return new Lazy<ConnectionMultiplexer>(() =>
-            {
-                return ConnectionMultiplexer.Connect(connectionString);
-            });
         }
 
         public async Task<IList<Ad>> GetAdsAsync()
