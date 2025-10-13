@@ -33,10 +33,12 @@ namespace VotingWeb.Clients
 
                 client = cosmosClient;
 
-                container = client.GetDatabase(databaseId).GetContainer(containerId);
+                container = client.GetContainer(databaseId, containerId);
             }
             catch (Exception ex) when (ex is RedisConnectionException ||
-                                      ex is RedisException)
+                                          ex is RedisCommandException ||
+                                          ex is RedisServerException ||
+                                          ex is RedisTimeoutException)
             {
                 throw new AdRepositoryException("Redis connection initialization error", ex);
             }
