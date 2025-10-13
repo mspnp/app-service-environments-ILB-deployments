@@ -431,7 +431,7 @@ resource votingFunction 'Microsoft.Web/sites@2024-11-01' = {
           value: 'Server=${sqlServerName}${environment().suffixes.sqlServerHostname},1433;Database=${sqlDatabaseName};'
         }
         {
-           name: 'AzureWebJobsStorage__accountName	'
+           name: 'AzureWebJobsStorage__accountName'
            value: votingStorage.name
         }
       ]
