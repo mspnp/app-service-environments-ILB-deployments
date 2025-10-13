@@ -36,6 +36,9 @@ namespace VotingWeb.Clients
                 container = client.GetDatabase(databaseId).GetContainer(containerId);
             }
             catch (Exception ex) when (ex is RedisConnectionException ||
+                              ex is RedisCommandException ||
+                              ex is RedisServerException ||
+                              ex is RedisTimeoutException)
                                       ex is RedisException)
             {
                 throw new AdRepositoryException("Redis connection initialization error", ex);
