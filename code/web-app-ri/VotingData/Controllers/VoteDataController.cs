@@ -5,12 +5,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using VotingData.Models;
+using Microsoft.Data.SqlClient;
 
 namespace VotingData.Controllers
 {

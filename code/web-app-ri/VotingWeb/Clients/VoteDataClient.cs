@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using VotingWeb.Exceptions;
 using VotingWeb.Interfaces;
 using VotingWeb.Models;
+using System.Text.Json;
 
 namespace VotingWeb.Clients
 {
@@ -26,14 +27,21 @@ namespace VotingWeb.Clients
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"/api/VoteData");
+                var request = new HttpRequestMessage(HttpMethod.Get, "/api/VoteData");
                 var response = await httpClient.SendAsync(request);
                 response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsAsync<IList<Counts>>();
+
+                var stream = await response.Content.ReadAsStreamAsync();
+                var counts = await JsonSerializer.DeserializeAsync<IList<Counts>>(stream, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return counts ?? new List<Counts>();
             }
             catch (Exception ex) when (ex is ArgumentNullException ||
-                                 ex is InvalidOperationException ||
-                                 ex is HttpRequestException)
+                                        ex is InvalidOperationException ||
+                                        ex is HttpRequestException)
             {
                 throw new VoteDataException("Http Request Exception Occurred when getting votes", ex);
             }

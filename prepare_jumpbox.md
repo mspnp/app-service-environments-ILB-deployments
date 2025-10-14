@@ -22,31 +22,26 @@ Connect the Jumpbox Virtual Machine through Azure Bastion in Azure Portal. Use t
 
    - Git (https://git-scm.com/downloads)
 
-# Set Up Github Actions Variables
-
-1. Go to your repository on GitHub.
-2. Click on Settings.
-3. In the left sidebar, click Variables under the Secrets and variables section.
-4. Click Actions.
-5. Click New variable.
-6. Set up the following variables
-
-* FUNCTION_APPPATH - eg. "code/function-app-ri/VoteCounter"
-* BUILDCONFIGURATION - eg. "Release"
-* FUNCTION_APP_NAME - App Service name for Voting Function App
-* VOTINGDATA_APPPATH - eg. "code/web-app-ri/VotingData"
-* VOTINGDATA_WEB_APP_NAME - App Service name for Voting API App
-* VOTINGWEB_APPPATH - eg. "code/web-app-ri/VotingWeb"
-* VOTINGWEB_APP_NAME - App Service name for Voting Web App
-
 # Set Up Github Actions Secret
 
-Obtain AZURE_CREDENTIALS for Github Runner - Copy the output of the following command and paste as secret:
+Create and manage user-assigned managed identities to allow GitHub Actions to deploy the apps. The Bicep template also assigns the Contributor role to the resource group and federates the identity to trust on GitHub. [More information here](https://learn.microsoft.com/azure/developer/github/connect-from-azure-openid-connect).
 
 ```bash
-az ad sp create-for-rbac --name "votingapp-service-principal" --role contributor \
-                                --scopes /subscriptions/$SUBID/resourceGroups/rg-app-service-environments-centralus \
-                                --sdk-auth
+export GITHUB_OWNER=<add your user>
+az deployment group create \
+  --resource-group rg-app-service-environments-centralus \
+  --template-file templates/github-action-identity.bicep \
+  --parameters githubOwner=$GITHUB_OWNER
+```
+
+Read the results and create github secrets AZURE_CLIENT_ID, AZURE_SUBSCRIPTION_ID, AZURE_TENANT_ID.
+```bash
+export AZURE_CLIENT_ID=$(az deployment group show --resource-group rg-app-service-environments-centralus --name github-action-identity --query "properties.outputs.azureClientId.value" --output tsv)
+export AZURE_TENANT_ID=$(az deployment group show --resource-group rg-app-service-environments-centralus --name github-action-identity --query "properties.outputs.azureTenantId.value" --output tsv)
+export AZURE_SUBSCRIPTION_ID=$(az deployment group show --resource-group rg-app-service-environments-centralus --name github-action-identity --query "properties.outputs.azureSubscriptionId.value" --output tsv)
+echo $AZURE_CLIENT_ID
+echo $AZURE_TENANT_ID
+echo $AZURE_SUBSCRIPTION_ID
 ```
 
 # Set Up Github Actions Runner on Jumpbox
@@ -56,4 +51,4 @@ az ad sp create-for-rbac --name "votingapp-service-principal" --role contributor
 3. Go to Actions > Runners
 4. Click on new Self Hosted Runner and follow the instructions on the jumpbox. Keep the Agent Running. Execute the command in a new PowerShell console to take the latest environment variables related to the recently installed tools.
 
-[Return to README.md >](./README.md#publish-aspnet-core-web-api-and-function-applications)
+[Return to README.md >](./README.md#ship-publish-aspnet-core-web-api-and-function-applications)

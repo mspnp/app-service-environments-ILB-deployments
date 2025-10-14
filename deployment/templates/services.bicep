@@ -25,6 +25,7 @@ var sqlDatabaseName = 'voting'
 var serviceBusName = 'votingservicebus${uniqueString(resourceGroup().id)}'
 var serviceBusQueueName = 'votingqueue'
 var resourcesStorageAccountName = toLower('resources${uniqueString(resourceGroup().id)}')
+var resourcesStorageAccountFunctionAppName = toLower('stfa${uniqueString(resourceGroup().id)}')
 var resourcesContainerName = 'rscontainer'
 var keyVaultName = 'akeyvault1-${uniqueString(resourceGroup().id)}'
  
@@ -130,7 +131,6 @@ resource sqlServerDatabase 'Microsoft.Sql/servers/databases@2024-11-01-preview' 
   }
 }
 
-
 resource sqlServerAdmin 'Microsoft.Sql/servers/administrators@2024-11-01-preview' = {
   parent: sqlServer
   name: 'activeDirectory'
@@ -148,36 +148,13 @@ resource keyVault 'Microsoft.KeyVault/vaults@2024-11-01' = {
   location: location
   properties: {
     accessPolicies: []
+    enableRbacAuthorization: true // Enables RBAC permission model
     publicNetworkAccess: 'disabled'
     sku: {
       family: 'A'
       name: 'standard'
     }
     tenantId: subscription().tenantId    
-  }
-}
-
-resource keyVaultCosmosKey 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
-  parent: keyVault
-  name: 'CosmosKey'
-  properties: {
-    value: cosmos.listKeys().primaryMasterKey 
-  }
-}
-
-resource keyVaultServiceBusListenerConnectionString 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
-  parent: keyVault
-  name: 'ServiceBusListenerConnectionString'
-  properties: {
-    value: 'Endpoint=sb://${serviceBusName}.servicebus.windows.net/;SharedAccessKeyName=${serviceBusListenerSharedAccessKey.name};SharedAccessKey=${listKeys(serviceBusListenerSharedAccessKey.id, '2021-11-01').primaryKey}'
-  }
-}
-
-resource keyVaultServiceBusSenderConnectionString 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
-  parent: keyVault
-  name: 'ServiceBusSenderConnectionString'
-  properties: {
-    value: 'Endpoint=sb://${serviceBusName}.servicebus.windows.net/;SharedAccessKeyName=${serviceBusSenderSharedAccessKey.name};SharedAccessKey=${listKeys(serviceBusSenderSharedAccessKey.id, '2021-11-01').primaryKey}'
   }
 }
 
@@ -252,7 +229,6 @@ resource resourcesStorageAccount 'Microsoft.Storage/storageAccounts@2025-01-01' 
   }
 }
 
-
 resource resourcesStorageAccountDefaultResourcesContainerName 'Microsoft.Storage/storageAccounts/blobServices/containers@2025-01-01' = {
   name: '${resourcesStorageAccountName}/default/${resourcesContainerName}'
   properties: {
@@ -263,10 +239,33 @@ resource resourcesStorageAccountDefaultResourcesContainerName 'Microsoft.Storage
   ]
 }
 
+resource resourcesStorageAccountFunctionApp 'Microsoft.Storage/storageAccounts@2025-01-01' = {
+  name: resourcesStorageAccountFunctionAppName
+  location: location
+  kind: 'StorageV2'
+  sku: {
+    name: (zoneRedundant ? 'Standard_ZRS' : 'Standard_LRS')
+  }
+  properties: {
+    allowBlobPublicAccess: false // Disable public access
+    accessTier: 'Hot'
+    minimumTlsVersion: 'TLS1_2'
+    allowSharedKeyAccess: false // Disable key-based access
+    networkAcls: {
+      bypass: 'AzureServices'
+      defaultAction: 'Deny'
+      ipRules: [] // No IPs allowed unless explicitly added
+      virtualNetworkRules: [] // No VNet access unless explicitly added
+    }
+  }
+}
+
+
 output cosmosDbName string = cosmosName
 output sqlServerName string = sqlServerName
 output sqlDatabaseName string = sqlDatabaseName
 output resourcesStorageAccountName string = resourcesStorageAccountName
+output resourcesStorageAccountFunctionAppName string = resourcesStorageAccountFunctionAppName
 output resourcesContainerName string = resourcesContainerName
 output keyVaultName string = keyVaultName
 output serviceBusName string = serviceBusName
