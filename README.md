@@ -47,7 +47,7 @@ App Service Environment must always be deployed in its own subnet in the enterpr
 
 1. An Azure subscription.
 
-   The subscription used in this deployment cannot be a [free account](https://azure.microsoft.com/free); it must be a standard EA, pay-as-you-go, or Visual Studio benefit subscription. This is because the resources deployed here are beyond the quotas of free subscriptions.
+   The subscription used in this deployment cannot be a [free account](https://azure.microsoft.com/pricing/purchase-options/azure-account?cid=msft_learn); it must be a standard EA, pay-as-you-go, or Visual Studio benefit subscription. This is because the resources deployed here are beyond the quotas of free subscriptions.
 
 1. Login into the Azure subscription that you'll be deploying into.
 
