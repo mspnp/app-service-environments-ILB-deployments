@@ -24,6 +24,9 @@ param akvName string
 @description('The name of the existing storage account for creating the private endpoint.')
 param storageAccountName string
 
+@description('The name of the existing azure managed redis namespace for creating the private endpoint.')
+param amrName string
+
 @description('The ip address prefix that services subnet will use.')
 param subnetAddressPrefix string = '10.0.50.0/24'
 
@@ -38,6 +41,7 @@ param sqlServerId string = '/subscriptions/${SubId}/resourceGroups/${resourceGro
 param cosmosId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.DocumentDB/databaseAccounts/${cosmosDBName}'
 param akvId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.KeyVault/vaults/${akvName}'
 param storageId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.Storage/storageAccounts/${storageAccountName}'
+param amrId string = '/subscriptions/${SubId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.Cache/redisEnterprise/${amrName}'
 
 //1. Create a private endpoint for the SQL Server
 
@@ -373,7 +377,7 @@ resource privateDnsZoneARecordAKV 'Microsoft.Network/privateDnsZones/A@2024-06-0
   }
 }
 
-// 5. Create a private endpoint for the Storage Account
+//5. Create a private endpoint for the Storage Account
 
 //Create variables for the private endpoint
 var storageHostName = '.blob.${environment().suffixes.storage}'
@@ -450,6 +454,84 @@ resource privateDnsZoneARecordStorage 'Microsoft.Network/privateDnsZones/A@2024-
     aRecords: [
       {
         ipv4Address: privateEndpointStorage.properties.customDnsConfigs[0].ipAddresses[0]
+      }
+    ]
+  }
+}
+
+//6. Create private endpoint for Azure Managed Redis
+
+// Create variables for the private endpoint
+var amrHostName = ''
+var privateEndpointAMRName = 'voting-AMR-PE-${servicesSubnetName}'
+var privateDnsZoneAMRName = 'privatelink${amrHostName}'
+var pvtEndpointDnsGroupAMRName = '${privateEndpointAMRName}/sbdnsgroupname'
+
+// Create private endpoint
+resource privateEndpointAMR 'Microsoft.Network/privateEndpoints@2024-07-01' = {
+  name: privateEndpointAMRName
+  location: location
+  properties: {
+    subnet: {
+      id: servicesSubnet.id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: privateEndpointAMRName
+        properties: {
+          privateLinkServiceId: amrId
+          groupIds: [
+            'redisEnterprise'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+resource privateDnsZoneAMR 'Microsoft.Network/privateDnsZones@2024-06-01' = {
+  name: privateDnsZoneAMRName
+  location: 'global'
+  properties: {}
+}
+
+resource privateDnsZoneLinkAMR 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+  parent: privateDnsZoneCosmos
+  name: '${privateDnsZoneAMRName}-link'
+  location: 'global'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: vnetId
+    }
+  }
+}
+
+resource pvtEndpointDnsGroupAMR 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-07-01' = {
+  name: pvtEndpointDnsGroupAMRName
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'config1'
+        properties: {
+          privateDnsZoneId: privateDnsZoneAMR.id
+        }
+      }
+    ]
+  }
+  dependsOn: [
+    privateEndpointAMR
+  ]
+}
+
+resource privateDnsZoneARecordAMR 'Microsoft.Network/privateDnsZones/A@2024-06-01' = {
+  parent: privateDnsZoneAMR
+  name: '${privateEndpointAMRName}.${privateDnsZoneAMRName}'
+  properties: {
+    ttl: 3600
+    aRecords: [
+      {
+        ipv4Address: privateEndpointAMR.properties.customDnsConfigs[0].ipAddresses[0]
       }
     ]
   }
