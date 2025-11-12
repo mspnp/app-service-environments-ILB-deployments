@@ -276,7 +276,7 @@ resource resourcesStorageAccountFunctionApp 'Microsoft.Storage/storageAccounts@2
   }
 }
 
-resource amr 'Microsoft.Cache/redisEnterprise@2025-05-01-preview' = {
+resource amr 'Microsoft.Cache/redisEnterprise@2025-07-01' = {
   location: location
   name: amrName
   properties: {
