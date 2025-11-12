@@ -282,9 +282,7 @@ resource amr 'Microsoft.Cache/redisEnterprise@2025-07-01' = {
   properties: {
     highAvailability: zoneRedundant ? 'Enabled' : 'Disabled'
     minimumTlsVersion: '1.2'
-  }
-  identity:{
-    type: 'SystemAssigned'
+    publicNetworkAccess: 'Disabled'
   }
   sku: {
     name: 'Balanced_B1'
@@ -295,7 +293,8 @@ resource amrDb 'Microsoft.Cache/redisEnterprise/databases@2025-07-01' = {
   name: amrDbName
   parent: amr
   properties: {
-    clientProtocol:'Encrypted'
+    accessKeyAuthentication: 'Disabled'
+    clientProtocol: 'Encrypted'
     port: 10000
     clusteringPolicy: amrOptions.clusteringPolicy
     evictionPolicy: amrOptions.evictionPolicy
@@ -308,14 +307,6 @@ resource amrDb 'Microsoft.Cache/redisEnterprise/databases@2025-07-01' = {
     modules: [for module in amrOptions.modulesEnabled: {
       name: module
     }]
-  }
-}
-
-resource keyVaultAmrConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2024-11-01' = {
-  parent: keyVault
-  name: 'RedisConnectionString'
-  properties: {
-    value: '${amr.properties.hostName}:10000,abortConnect=false,ssl=true,password=${listKeys(amr.id, '2015-08-01').primaryKey}'
   }
 }
 

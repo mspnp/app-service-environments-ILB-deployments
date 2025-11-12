@@ -462,7 +462,7 @@ resource privateDnsZoneARecordStorage 'Microsoft.Network/privateDnsZones/A@2024-
 //6. Create private endpoint for Azure Managed Redis
 
 // Create variables for the private endpoint
-var amrHostName = ''
+var amrHostName = '.redis.azure.net'
 var privateEndpointAMRName = 'voting-AMR-PE-${servicesSubnetName}'
 var privateDnsZoneAMRName = 'privatelink${amrHostName}'
 var pvtEndpointDnsGroupAMRName = '${privateEndpointAMRName}/sbdnsgroupname'
