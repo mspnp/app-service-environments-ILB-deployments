@@ -84,7 +84,7 @@ resource serviceBus 'Microsoft.ServiceBus/namespaces@2025-05-01-preview' existin
 }
 
 // Reference the existing Azure Managed Redis cluster
-resource amr 'Microsoft.Cache/redisEnterprise@2024-09-01-preview' existing = {
+resource amr 'Microsoft.Cache/redisEnterprise@2025-07-01' existing = {
   name: amrName
 }
 
