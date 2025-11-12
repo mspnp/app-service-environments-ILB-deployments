@@ -195,7 +195,7 @@ App Service Environment must always be deployed in its own subnet in the enterpr
     echo $JUMPBOX_SUBNET_NAME
    ```
 
-### 8. Deploy services: cosmos, sql, servicebus and storage
+### 8. Deploy services: cosmos, sql, azure managed redis, servicebus and storage
    This module provisions the essential backend services required for the application. It includes a Cosmos DB instance for distributed caching, a secure SQL Server and database for relational data, and an Azure Key Vault for managing secrets using role-based access control. A premium-tier Service Bus is configured to enable reliable messaging between application components. Additionally, a storage account with a blob container provides scalable storage for static resources, while a second storage account is designated for use by the Function App as Azure WebJob storage. All services are deployed with public network access disabled where applicable, ensuring a secure and private infrastructure.
 
    ```bash
@@ -221,6 +221,8 @@ App Service Environment must always be deployed in its own subnet in the enterpr
     echo $RESOURCES_CONTAINER_NAME
     export SERVICEBUS_NAMESPACE_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n services --query properties.outputs.serviceBusName.value -o tsv)
     echo $SERVICEBUS_NAMESPACE_NAME
+    export AMR_NAME=$(az deployment group show -g rg-app-service-environments-centralus -n services --query properties.outputs.amrName.value -o tsv)
+    echo $AMR_NAME
    ```
 
 ### 9. Uploads image to the storage account
@@ -241,7 +243,7 @@ App Service Environment must always be deployed in its own subnet in the enterpr
    # [This takes about thirty minutes to run.]
    # For HA change zoneRedundant to true
     az deployment group create -g rg-app-service-environments-centralus --template-file templates/sites.bicep -n sites --parameters aseName=$ASE_NAME \
-    vnetName=$VNET_NAME cosmosDbName=$COSMOSDB_NAME sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME serviceBusNamespace=$SERVICEBUS_NAMESPACE_NAME  storageAccountName=$RESOURCES_STORAGE_ACCOUNT_FUNCTION_APP \
+    amrName=$AMR_NAME cosmosDbName=$COSMOSDB_NAME sqlServerName=$SQL_SERVER sqlDatabaseName=$SQL_DATABASE keyVaultName=$KEYVAULT_NAME serviceBusNamespace=$SERVICEBUS_NAMESPACE_NAME  storageAccountName=$RESOURCES_STORAGE_ACCOUNT_FUNCTION_APP \
     aseDnsSuffix=$ASE_DNS_SUFFIX  zoneRedundant=false
 	
     export INTERNAL_APP1_URL=$(az deployment group show -g rg-app-service-environments-centralus -n sites --query properties.outputs.votingAppUrl.value -o tsv) && \

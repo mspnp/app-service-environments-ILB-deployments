@@ -28,7 +28,23 @@ var resourcesStorageAccountName = toLower('resources${uniqueString(resourceGroup
 var resourcesStorageAccountFunctionAppName = toLower('stfa${uniqueString(resourceGroup().id)}')
 var resourcesContainerName = 'rscontainer'
 var keyVaultName = 'akeyvault1-${uniqueString(resourceGroup().id)}'
- 
+var amrName = 'amr-${uniqueString(resourceGroup().id)}'
+var amrDbName = 'default'
+var amrOptions = {
+  clusteringPolicy: 'EnterpriseCluster'
+  evictionPolicy: 'NoEviction'
+  modulesEnabled: [
+    'RedisBloom'
+    'RedisTimeSeries'
+    'RedisJSON'
+    'RedisSearch'
+  ]
+  aofPersistence: false
+  aofFrequency: '1s'
+  rdbPersistence: true
+  rdbFrequency: '6h' // 12h, 1h, 6h
+}
+
 resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2025-04-15' = {
   name: cosmosName
   location: location
@@ -260,6 +276,39 @@ resource resourcesStorageAccountFunctionApp 'Microsoft.Storage/storageAccounts@2
   }
 }
 
+resource amr 'Microsoft.Cache/redisEnterprise@2025-07-01' = {
+  location: location
+  name: amrName
+  properties: {
+    highAvailability: zoneRedundant ? 'Enabled' : 'Disabled'
+    minimumTlsVersion: '1.2'
+    publicNetworkAccess: 'Disabled'
+  }
+  sku: {
+    name: 'Balanced_B1'
+  }
+}
+
+resource amrDb 'Microsoft.Cache/redisEnterprise/databases@2025-07-01' = {
+  name: amrDbName
+  parent: amr
+  properties: {
+    accessKeyAuthentication: 'Disabled'
+    clientProtocol: 'Encrypted'
+    port: 10000
+    clusteringPolicy: amrOptions.clusteringPolicy
+    evictionPolicy: amrOptions.evictionPolicy
+    persistence: {
+      aofEnabled: amrOptions.aofPersistence
+      aofFrequency: amrOptions.aofPersistence ? amrOptions.aofFrequency : null
+      rdbEnabled: amrOptions.rdbPersistence
+      rdbFrequency: amrOptions.rdbPersistence ? amrOptions.rdbFrequency : null
+    }
+    modules: [for module in amrOptions.modulesEnabled: {
+      name: module
+    }]
+  }
+}
 
 output cosmosDbName string = cosmosName
 output sqlServerName string = sqlServerName
@@ -269,3 +318,4 @@ output resourcesStorageAccountFunctionAppName string = resourcesStorageAccountFu
 output resourcesContainerName string = resourcesContainerName
 output keyVaultName string = keyVaultName
 output serviceBusName string = serviceBusName
+output amrName string = amr.name

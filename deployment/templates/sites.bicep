@@ -1,12 +1,6 @@
 @description('The location in which the resources should be deployed.')
 param location string = resourceGroup().location
 
-@description('The vnet name where redis will be connected.')
-param vnetName string
-
-@description('The ip address prefix REDIS will use.')
-param redisSubnetAddressPrefix string = '10.0.2.0/24'
-
 @description('The ASE name where to host the applications')
 param aseName string
 
@@ -34,13 +28,9 @@ param storageAccountName string
 @description('The name for the log analytics workspace')
 param logAnalyticsWorkspace string = '${uniqueString(resourceGroup().id)}la'
 
-@description('The availability zone to deploy. Valid values are: 1, 2 or 3. Use empty to not use zones.')
-param zoneRedundant bool = false
+@description('The name for the azure managed redis cluster')
+param amrName string
 
-var redisName = 'REDIS-${uniqueString(resourceGroup().id)}'
-var redisSubnetName = 'redis-subnet-${uniqueString(resourceGroup().id)}'
-var redisSubnetId = redisSubnet.id
-var redisNSGName = '${vnetName}-REDIS-NSG'
 var votingApiName = 'votingapiapp-${uniqueString(resourceGroup().id)}'
 var votingWebName = 'votingwebapp-${uniqueString(resourceGroup().id)}'
 var testWebName = 'testwebapp-${uniqueString(resourceGroup().id)}'
@@ -88,159 +78,20 @@ var azureStorageBlobDataOwnerRole = subscriptionResourceId(
 resource cosmosDatabaseAccount 'Microsoft.DocumentDB/databaseAccounts@2025-04-15' existing = {
   name: cosmosDbName
 }
+
 resource serviceBus 'Microsoft.ServiceBus/namespaces@2025-05-01-preview' existing = {
   name: serviceBusNamespace
 }
 
-resource redisNSG 'Microsoft.Network/networkSecurityGroups@2024-07-01' = {
-  name: redisNSGName
-  location: location
-  tags: {
-    displayName: redisNSGName
-  }
-  properties: {
-    securityRules: [
-      {
-        name: 'REDIS-inbound-vnet'
-        properties: {
-          description: 'Client communication inside vnet'
-          protocol: 'Tcp'
-          sourcePortRange: '*'
-          destinationPortRanges: [
-            '6379'
-            '6380'
-            '13000-13999'
-            '15000-15999'
-          ]
-          sourceAddressPrefix: 'VirtualNetwork'
-          destinationAddressPrefix: redisSubnetAddressPrefix
-          access: 'Allow'
-          priority: 200
-          direction: 'Inbound'
-        }
-      }
-      {
-        name: 'REDIS-inbound-loadbalancer'
-        properties: {
-          description: 'Allow communication from Load Balancer'
-          protocol: '*'
-          sourcePortRange: '*'
-          destinationPortRange: '*'
-          sourceAddressPrefix: 'AzureLoadBalancer'
-          destinationAddressPrefix: redisSubnetAddressPrefix
-          access: 'Allow'
-          priority: 201
-          direction: 'Inbound'
-        }
-      }
-      {
-        name: 'REDIS-inbound-allow_internal-communication'
-        properties: {
-          description: 'Internal communications for Redis'
-          protocol: 'Tcp'
-          sourcePortRange: '*'
-          destinationPortRanges: [
-            '6379'
-            '6380'
-            '8443'
-            '10221-10231'
-            '20226'
-          ]
-          sourceAddressPrefix: redisSubnetAddressPrefix
-          destinationAddressPrefix: redisSubnetAddressPrefix
-          access: 'Allow'
-          priority: 202
-          direction: 'Inbound'
-        }
-      }
-      {
-        name: 'REDIS-outbound-allow_storage'
-        properties: {
-          description: 'Redis dependencies on Azure Storage/PKI (Internet)'
-          protocol: 'Tcp'
-          sourcePortRange: '*'
-          destinationPortRanges: [
-            '80'
-            '443'
-          ]
-          sourceAddressPrefix: redisSubnetAddressPrefix
-          destinationAddressPrefix: '*'
-          access: 'Allow'
-          priority: 200
-          direction: 'Outbound'
-        }
-      }
-      {
-        name: 'REDIS-outbound-allow_DNS'
-        properties: {
-          description: 'Redis dependencies on DNS (Internet/VNet)'
-          protocol: '*'
-          sourcePortRange: '*'
-          destinationPortRange: '53'
-          sourceAddressPrefix: '*'
-          destinationAddressPrefix: '*'
-          access: 'Allow'
-          priority: 201
-          direction: 'Outbound'
-        }
-      }
-      {
-        name: 'REDIS-outbound-allow_ports-within-subnet'
-        properties: {
-          description: 'Internal communications for Redis'
-          protocol: 'Tcp'
-          sourcePortRange: '*'
-          destinationPortRange: '*'
-          sourceAddressPrefix: redisSubnetAddressPrefix
-          destinationAddressPrefix: redisSubnetAddressPrefix
-          access: 'Allow'
-          priority: 202
-          direction: 'Outbound'
-        }
-      }
-    ]
-  }
+// Reference the existing Azure Managed Redis cluster
+resource amr 'Microsoft.Cache/redisEnterprise@2025-07-01' existing = {
+  name: amrName
 }
 
-resource redisSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' = {
-  name: '${vnetName}/${redisSubnetName}'
-  properties: {
-    addressPrefix: redisSubnetAddressPrefix
-    defaultOutboundAccess: false
-    networkSecurityGroup: {
-      id: redisNSG.id
-    }
-  }
-}
-
-resource redis 'Microsoft.Cache/Redis@2024-11-01' = {
-  name: redisName
-  location: location
-  zones: (zoneRedundant ? ['1', '2', '3'] : null)
-  properties: {
-    sku: {
-      name: 'Premium'
-      family: 'P'
-      capacity: 3
-    }
-    enableNonSslPort: false
-    subnetId: redisSubnetId
-    disableAccessKeyAuthentication: true // Disable access key authentication
-    redisConfiguration: {
-      'aad-enabled': 'true' // Enable Microsoft Entra authentication
-    }
-    minimumTlsVersion: '1.2'
-  }
-}
-
-resource builtInAccessPolicyAssignment 'Microsoft.Cache/redis/accessPolicyAssignments@2024-11-01' = {
-  name: 'builtInAccessPolicyAssignment-${uniqueString(resourceGroup().id)}'
-  parent: redis
-  properties: {
-    accessPolicyName: 'Data Contributor' // or 'Data Owner', 'Data Reader'
-    objectId: votingWebApp.identity.principalId
-    objectIdAlias: 'AppServiceManagedIdentity'
-  }
+// Reference the existing Azure Managed Redis database
+resource amrDb 'Microsoft.Cache/redisEnterprise/databases@2024-09-01-preview' existing = {
+  name: 'default'
+  parent: amr
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2024-11-01' existing = {
@@ -527,12 +378,8 @@ resource votingWebApp 'Microsoft.Web/sites@2024-11-01' = {
           value: votingWebAppInsights.properties.ConnectionString
         }
         {
-          name: 'RedisHost'
-          value: redis.properties.hostName
-        }
-        {
-          name: 'RedisPort'
-          value: '${redis.properties.sslPort}'
+          name: 'ConnectionStrings:Redis'
+          value: '${amr.properties.hostName}:10000,abortConnect=false,ssl=true'
         }
         {
           name: 'ConnectionStrings:queueName'
@@ -577,6 +424,17 @@ resource cosmosDBAccountReaderRoleAssignment 'Microsoft.Authorization/roleAssign
     principalType: 'ServicePrincipal'
   }
 }
+
+resource redisAccessPolicyAssignmentName 'Microsoft.Cache/redisEnterprise/databases/accessPolicyAssignments@2024-09-01-preview' = {
+  name: take('cachecontributor${uniqueString(resourceGroup().id)}', 24)
+  parent: amrDb
+  properties: {
+    accessPolicyName: 'default'
+    user: {
+      objectId: votingWebApp.identity.principalId
+      }
+    }
+  }
 
 resource testWebApp 'Microsoft.Web/sites@2024-11-01' = {
   name: testWebName
@@ -690,9 +548,6 @@ resource cryptoUserTestWebApp 'Microsoft.Authorization/roleAssignments@2022-04-0
   }
 }
 
-output redisName string = redisName
-output redisSubnetId string = redisSubnetId
-output redisSubnetName string = redisSubnetName
 output votingWebName string = votingWebName
 output testWebName string = testWebName
 output votingAppUrl string = '${votingWebName}.${aseDnsSuffix}'
