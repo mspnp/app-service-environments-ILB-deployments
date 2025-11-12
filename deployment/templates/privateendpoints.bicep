@@ -496,7 +496,7 @@ resource privateDnsZoneAMR 'Microsoft.Network/privateDnsZones@2024-06-01' = {
 }
 
 resource privateDnsZoneLinkAMR 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
-  parent: privateDnsZoneCosmos
+  parent: privateDnsZoneAMR
   name: '${privateDnsZoneAMRName}-link'
   location: 'global'
   properties: {
