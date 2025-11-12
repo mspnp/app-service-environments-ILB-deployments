@@ -291,7 +291,7 @@ resource amr 'Microsoft.Cache/redisEnterprise@2025-07-01' = {
   }
 }
 
-resource amrDb 'Microsoft.Cache/redisEnterprise/databases@2024-09-01-preview' = {
+resource amrDb 'Microsoft.Cache/redisEnterprise/databases@2025-07-01' = {
   name: amrDbName
   parent: amr
   properties: {
