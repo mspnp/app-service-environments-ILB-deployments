@@ -4,6 +4,8 @@ on:
 
 jobs:
   build:
+    permissions:
+      contents: read
     runs-on: self-hosted
     steps:
       - name: Checkout specific branch
